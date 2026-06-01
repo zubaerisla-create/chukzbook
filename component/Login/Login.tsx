@@ -3,9 +3,11 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import loginBg from "@/assets/images/login.png";
 
 const Login = () => {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -13,6 +15,7 @@ const Login = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Signing in with:", { email, password, rememberMe });
+    router.push("/#hero");
   };
 
   return (
@@ -167,6 +170,7 @@ const Login = () => {
             {/* Google OAuth Button */}
             <button
               type="button"
+              onClick={() => router.push("/#hero")}
               className="w-full flex items-center justify-center py-4 px-6 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 text-gray-600 text-sm font-semibold rounded-[12px] shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer font-sans"
             >
               {/* Google Icon */}
@@ -193,7 +197,12 @@ const Login = () => {
           </form>
         </div>
       </div>
+
+
+
+
     </div>
+    
   );
 };
 

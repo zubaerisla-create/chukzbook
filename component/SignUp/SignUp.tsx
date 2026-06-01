@@ -3,9 +3,11 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import signupBg from "@/assets/images/signup.png";
 
 const SignUp = () => {
+  const router = useRouter();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -27,6 +29,7 @@ const SignUp = () => {
       goal,
       agreeTerms,
     });
+    router.push("/#hero");
   };
 
   return (
@@ -319,6 +322,7 @@ const SignUp = () => {
             {/* Google OAuth Button */}
             <button
               type="button"
+              onClick={() => router.push("/#hero")}
               className="w-full flex items-center justify-center py-4 px-6 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 text-gray-600 text-sm font-semibold rounded-[12px] shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer font-sans"
             >
               {/* Google Icon */}
@@ -359,6 +363,8 @@ const SignUp = () => {
           <a href="#contact" className="hover:text-white transition-colors">Contact Us</a>
         </div>
       </footer>
+
+      
     </div>
   );
 };
