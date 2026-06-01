@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import hero4 from "@/assets/images/hero4.png";
 
 const packages = [
   {
@@ -85,13 +86,19 @@ const packages = [
 
 const Packages = () => {
   return (
-    <section id="packages" className="py-24 bg-[#FAF8F5] relative overflow-hidden">
+    <section
+      id="packages"
+      className="py-24 relative overflow-hidden bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${hero4.src})` }}
+    >
+      {/* Light overlay to keep text readable and image visible */}
+      <div className="absolute inset-0 bg-[#FAF8F5]/45 pointer-events-none" />
 
       {/* Decorative */}
-      <div className="absolute top-10 right-10 w-48 h-48 rounded-full border border-[#B89C72]/10 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full border border-[#B89C72]/10 pointer-events-none" />
+      <div className="absolute top-10 right-10 w-48 h-48 rounded-full border border-[#B89C72]/10 pointer-events-none z-0" />
+      <div className="absolute bottom-0 left-0 w-64 h-64 rounded-full border border-[#B89C72]/10 pointer-events-none z-0" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* Header */}
         <div className="text-center mb-14">

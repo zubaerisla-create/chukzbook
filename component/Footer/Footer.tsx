@@ -1,113 +1,207 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
+import footerBg from "@/assets/images/footer.png";
 
 const Footer = () => {
   return (
-    <footer className="bg-[#0B132B] text-[#A2B2C8]">
-      
-      {/* Main Footer */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+    <footer
+      className="relative bg-cover bg-center bg-no-repeat pt-20 overflow-hidden"
+      style={{ backgroundImage: `url(${footerBg.src})` }}
+    >
+      {/* Soft light overlay to blend background asset graphics */}
+      <div className="absolute inset-0 bg-[#FAF8F5]/30 pointer-events-none z-0" />
+
+      {/* Main Footer Container */}
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 pb-16 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 items-start">
           
-          {/* Brand Column */}
-          <div className="sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center gap-2.5 mb-4">
-              <svg viewBox="0 0 100 100" className="w-8 h-8 text-[#B89C72]" fill="currentColor">
-                <path d="M 28 15 L 42 15 L 42 20 L 38 20 L 38 80 L 42 80 L 42 85 L 28 85 L 28 80 L 32 80 L 32 20 L 28 20 Z" />
-                <path d="M 58 15 L 72 15 L 72 20 L 68 20 L 68 80 L 72 80 L 72 85 L 58 85 L 58 80 L 62 80 L 62 20 L 58 20 Z" />
-                <path d="M 38 47.5 L 68 47.5 L 68 52.5 L 38 52.5 Z" />
-                <path d="M 46 35 L 54 35 L 54 62 L 50 58 L 46 62 Z" fill="#162040" stroke="#B89C72" strokeWidth="2.5" />
-              </svg>
-              <span className="font-serif text-xl font-bold text-white tracking-wide">Harmony Publishing</span>
-            </div>
-            <p className="text-sm leading-relaxed text-[#7A8FA8] mb-6 max-w-xs">
-              Helping authors transform their ideas into professionally published books that inspire the world.
+          {/* Brand Info Column */}
+          <div className="lg:col-span-4 flex flex-col items-start pr-0 lg:pr-10">
+            <h3 className="font-serif text-3xl font-bold text-[#0B132B] mb-5 tracking-wide">
+              Harmony Publishing
+            </h3>
+            <p className="text-gray-500 text-sm font-medium leading-relaxed max-w-sm mb-6">
+              A premium US-based self-publishing and book printing platform dedicated to bringing your story to the world with elegance and precision.
             </p>
-            <div className="flex gap-3">
-              {["facebook", "twitter", "instagram", "linkedin"].map((s) => (
-                <a key={s} href="#" className="w-9 h-9 rounded-full border border-[#1D2E55] flex items-center justify-center hover:border-[#B89C72] hover:text-[#B89C72] transition-colors">
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 3a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 14.2a7.2 7.2 0 0 1-6-3.22c.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08a7.2 7.2 0 0 1-6 3.22z" />
+            {/* Height Spacer to account for the background book/quill graphic on the left bottom side */}
+            <div className="hidden lg:block h-36" />
+          </div>
+
+          {/* Quick Links Column */}
+          <div className="lg:col-span-2">
+            <h4 className="text-[#B89C72] font-serif text-sm font-bold tracking-wider uppercase mb-5">
+              Quick Links
+            </h4>
+            <ul className="space-y-4 text-xs font-bold uppercase tracking-wider">
+              <li>
+                <Link href="/" className="text-gray-600 hover:text-[#0B132B] transition-colors">
+                  Home
+                </Link>
+              </li>
+              <li>
+                <Link href="#about" className="text-gray-600 hover:text-[#0B132B] transition-colors">
+                  About us
+                </Link>
+              </li>
+              <li>
+                <Link href="#services" className="text-gray-600 hover:text-[#0B132B] transition-colors">
+                  Services
+                </Link>
+              </li>
+              <li>
+                <Link href="#packages" className="text-gray-600 hover:text-[#0B132B] transition-colors">
+                  Packages
+                </Link>
+              </li>
+              <li>
+                <Link href="#estimator" className="text-gray-600 hover:text-[#0B132B] transition-colors">
+                  Calculator
+                </Link>
+              </li>
+              <li>
+                <Link href="#contact" className="text-gray-600 hover:text-[#0B132B] transition-colors">
+                  Contact Us
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Services Column */}
+          <div className="lg:col-span-2">
+            <h4 className="text-[#B89C72] font-serif text-sm font-bold tracking-wider uppercase mb-5">
+              Services
+            </h4>
+            <ul className="space-y-4 text-xs font-bold uppercase tracking-wider">
+              <li>
+                <Link href="#services" className="text-gray-600 hover:text-[#0B132B] transition-colors">
+                  Editing
+                </Link>
+              </li>
+              <li>
+                <Link href="#services" className="text-gray-600 hover:text-[#0B132B] transition-colors">
+                  Cover Design
+                </Link>
+              </li>
+              <li>
+                <Link href="#services" className="text-gray-600 hover:text-[#0B132B] transition-colors">
+                  Formatting
+                </Link>
+              </li>
+              <li>
+                <Link href="#services" className="text-gray-600 hover:text-[#0B132B] transition-colors">
+                  Printing
+                </Link>
+              </li>
+              <li>
+                <Link href="#services" className="text-gray-600 hover:text-[#0B132B] transition-colors">
+                  Distribution
+                </Link>
+              </li>
+              <li>
+                <Link href="#services" className="text-gray-600 hover:text-[#0B132B] transition-colors">
+                  Marketing
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Resources Column */}
+          <div className="lg:col-span-2">
+            <h4 className="text-[#B89C72] font-serif text-sm font-bold tracking-wider uppercase mb-5">
+              Resources
+            </h4>
+            <ul className="space-y-4 text-xs font-bold uppercase tracking-wider">
+              <li>
+                <Link href="#faq" className="text-gray-600 hover:text-[#0B132B] transition-colors">
+                  FAQ
+                </Link>
+              </li>
+              <li>
+                <Link href="#publishing-guide" className="text-gray-600 hover:text-[#0B132B] transition-colors">
+                  Publishing Guide
+                </Link>
+              </li>
+              <li>
+                <Link href="/login" className="text-gray-600 hover:text-[#0B132B] transition-colors">
+                  Author Login
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Stay Update Column */}
+          <div className="lg:col-span-2 flex flex-col space-y-5">
+            <div>
+              <h4 className="text-[#B89C72] font-serif text-sm font-bold tracking-wider uppercase mb-4">
+                STAY UPDATE
+              </h4>
+              <p className="text-gray-500 text-xs font-medium leading-relaxed">
+                Subscribe to get publishing tips, author stories & exclusive updates.
+              </p>
+            </div>
+
+            {/* Newsletter Input */}
+            <form onSubmit={(e) => e.preventDefault()} className="relative flex items-center">
+              <input
+                type="email"
+                placeholder="Your email address"
+                className="w-full bg-white border border-[#e8dfc8] rounded-lg px-4 py-2.5 pr-12 text-xs placeholder-gray-400 text-[#0c1424] focus:outline-none focus:border-[#B89C72] transition-colors"
+              />
+              <button
+                type="submit"
+                className="absolute right-1 top-1 bottom-1 w-10 bg-[#B89C72] hover:bg-[#9a7e55] rounded-md text-white flex items-center justify-center transition-colors"
+              >
+                <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                  <path d="m2.01 21 22.58-9L2.01 3v7l15 2-15 2v7z" />
+                </svg>
+              </button>
+            </form>
+
+            {/* Social Icons row */}
+            <div className="flex items-center gap-2">
+              {[
+                { icon: "facebook", path: "M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z" },
+                { icon: "twitter", path: "M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" },
+                { icon: "instagram", path: "M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" },
+                { icon: "member", path: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" },
+                { icon: "rss", path: "M4 19a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0-8c5.523 0 10 4.477 10 10h-2c0-4.418-3.582-8-8-8v-2zm0-8c9.941 0 18 8.059 18 18h-2c0-8.837-7.163-16-16-16V3z" },
+              ].map((s, i) => (
+                <a
+                  key={i}
+                  href="#"
+                  className="w-8 h-8 rounded-full border border-gray-200 hover:border-[#B89C72] flex items-center justify-center text-gray-500 hover:text-[#B89C72] hover:bg-[#B89C72]/5 transition-all"
+                >
+                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                    <path d={s.path} />
                   </svg>
                 </a>
               ))}
             </div>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h4 className="text-white font-bold mb-4 text-sm tracking-wide">Quick Links</h4>
-            <ul className="space-y-3 text-sm">
-              {["About Us", "Our Services", "Book Calculator", "Publishing Packages", "Books Published", "Contact Us"].map((l) => (
-                <li key={l}>
-                  <a href="#" className="text-[#7A8FA8] hover:text-[#B89C72] transition-colors">{l}</a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Services */}
-          <div>
-            <h4 className="text-white font-bold mb-4 text-sm tracking-wide">Our Services</h4>
-            <ul className="space-y-3 text-sm">
-              {["Editing & Proofreading", "Cover Design", "Interior Formatting", "Book Printing", "Marketing Services", "Global Distribution"].map((l) => (
-                <li key={l}>
-                  <a href="#" className="text-[#7A8FA8] hover:text-[#B89C72] transition-colors">{l}</a>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <h4 className="text-white font-bold mb-4 text-sm tracking-wide">Contact Us</h4>
-            <ul className="space-y-4 text-sm text-[#7A8FA8]">
-              <li className="flex items-start gap-2.5">
-                <svg className="w-4 h-4 text-[#B89C72] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
-                </svg>
-                support@harmonypublishing.com
-              </li>
-              <li className="flex items-start gap-2.5">
-                <svg className="w-4 h-4 text-[#B89C72] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-2.824-1.802-5.14-4.117-6.942-6.942l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
-                </svg>
-                +1 (555) 123-4567
-              </li>
-              <li className="flex items-start gap-2.5">
-                <svg className="w-4 h-4 text-[#B89C72] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
-                </svg>
-                123 Publishing Ave, New York, NY 10001
-              </li>
-            </ul>
-
-            <div className="mt-6">
-              <Link
-                href="/signup"
-                className="inline-flex items-center gap-2 px-5 py-3 bg-[#B89C72] hover:bg-[#9a7e55] text-white text-sm font-bold rounded-xl transition-all duration-200"
-              >
-                Start Publishing
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
-                </svg>
-              </Link>
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="border-t border-[#1D2E55]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#4D6280]">
-          <p>© 2026 Harmony Publishing LLC. All Rights Reserved.</p>
-          <div className="flex items-center gap-6">
-            <a href="#" className="hover:text-[#B89C72] transition-colors">Privacy Policy</a>
+      {/* Bottom Bar copyright container */}
+      <div className="bg-[#0B132B] py-5 border-t border-[#B89C72]/20">
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-white/60 text-xs font-medium">
+            © 2024 Harmony Publishing LLC. All Rights Reserved.
+          </p>
+          <div className="flex items-center gap-4 text-white/60 text-xs font-medium">
+            <Link href="#privacy" className="hover:text-white transition-colors">
+              Privacy Policy
+            </Link>
             <span>|</span>
-            <a href="#" className="hover:text-[#B89C72] transition-colors">Terms Of Service</a>
+            <Link href="#terms" className="hover:text-white transition-colors">
+              Terms Of Service
+            </Link>
             <span>|</span>
-            <a href="#" className="hover:text-[#B89C72] transition-colors">Contact Us</a>
+            <Link href="#terms" className="hover:text-white transition-colors">
+              Terms Of Service
+            </Link>
           </div>
         </div>
       </div>

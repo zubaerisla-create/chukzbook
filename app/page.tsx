@@ -7,6 +7,10 @@ import Assistant from "@/component/Assistant/Assistant";
 import About from "@/component/About/About";
 import Showcase from "@/component/Showcase/Showcase";
 import HowItWorks from "@/component/HowItWorks/HowItWorks";
+import Testimonials from "@/component/Testimonials/Testimonials";
+import FAQ from "@/component/FAQ/FAQ";
+import ReadyToPublish from "@/component/ReadyToPublish/ReadyToPublish";
+import Contact from "@/component/Contact/Contact";
 import Footer from "@/component/Footer/Footer";
 
 export default function Home() {
@@ -21,6 +25,10 @@ export default function Home() {
       <About />
       <Showcase />
       <HowItWorks />
+      <Testimonials />
+      <FAQ />
+      <ReadyToPublish />
+      <Contact />
       <Footer />
     </main>
   );

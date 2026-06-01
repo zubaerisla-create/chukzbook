@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import hero5 from "@/assets/images/hero5-left.png";
 
 type Message = { from: "user" | "assistant"; text: string };
 
@@ -75,10 +76,18 @@ const Assistant = () => {
         <div className="flex flex-col lg:flex-row gap-8 items-start">
 
           {/* Chat Widget */}
-          <div className="w-full lg:flex-1 bg-[#FAF8F5] rounded-2xl border border-[#EBE5D6] shadow-sm overflow-hidden flex flex-col" style={{ minHeight: "520px" }}>
+          <div
+            className="w-full lg:flex-1 relative rounded-2xl border border-[#EBE5D6] shadow-sm overflow-hidden flex flex-col bg-cover bg-center bg-no-repeat"
+            style={{
+              minHeight: "520px",
+              backgroundImage: `url(${hero5.src})`,
+            }}
+          >
+            {/* Light overlay to keep text readable and image visible */}
+            <div className="absolute inset-0 bg-white/45 pointer-events-none z-0" />
             
             {/* Chat Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#EBE5D6] bg-white">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#EBE5D6] bg-white relative z-10">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-[#0B132B] flex items-center justify-center">
                   <svg className="w-4 h-4 text-[#B89C72]" fill="currentColor" viewBox="0 0 24 24">
@@ -101,7 +110,7 @@ const Assistant = () => {
             </div>
 
             {/* Suggested Pills */}
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-[#EBE5D6] bg-white flex-wrap">
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-[#EBE5D6] bg-white flex-wrap relative z-10">
               <span className="text-xs font-semibold text-[#B89C72] mr-1">You Can Ask Me About →</span>
               {SUGGESTED.map((s) => (
                 <button
@@ -115,7 +124,7 @@ const Assistant = () => {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4">
+            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 relative z-10">
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.from === "user" ? "justify-end" : "justify-start"}`}>
                   {msg.from === "assistant" && (
@@ -140,7 +149,7 @@ const Assistant = () => {
             </div>
 
             {/* Input Bar */}
-            <div className="px-5 py-4 border-t border-[#EBE5D6] bg-white flex items-center gap-3">
+            <div className="px-5 py-4 border-t border-[#EBE5D6] bg-white flex items-center gap-3 relative z-10">
               <input
                 type="text"
                 value={input}

@@ -9,11 +9,7 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
+      setScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -21,61 +17,87 @@ const Navbar = () => {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed z-50 top-0 left-1/2 -translate-x-1/2 transition-all duration-500 ${
         scrolled
-          ? "bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm py-3"
-          : "bg-transparent py-5"
+          ? "w-[calc(100%-2rem)] max-w-6xl mt-3 rounded-2xl shadow-[0_8px_32px_rgba(11,19,43,0.12)] py-2.5 px-6"
+          : "w-full max-w-7xl py-5 px-6"
       }`}
+      style={{
+        backgroundColor: scrolled ? "#F9F6F2" : "transparent",
+        border: scrolled ? "1px solid rgba(232,223,200,0.6)" : "none",
+      }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+
+      <div className="relative w-full">
         <div className="flex items-center justify-between">
-          
+
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2.5 group">
-            <svg viewBox="0 0 100 100" className="w-8 h-8 text-[#B89C72] drop-shadow-sm transition-transform duration-300 group-hover:scale-105" fill="currentColor">
+            <svg
+              viewBox="0 0 100 100"
+              className={`text-[#B89C72] drop-shadow-sm transition-all duration-300 group-hover:scale-105 ${
+                scrolled ? "w-6 h-6" : "w-8 h-8"
+              }`}
+              fill="currentColor"
+            >
               <path d="M 28 15 L 42 15 L 42 20 L 38 20 L 38 80 L 42 80 L 42 85 L 28 85 L 28 80 L 32 80 L 32 20 L 28 20 Z" />
               <path d="M 58 15 L 72 15 L 72 20 L 68 20 L 68 80 L 72 80 L 72 85 L 58 85 L 58 80 L 62 80 L 62 20 L 58 20 Z" />
               <path d="M 38 47.5 L 68 47.5 L 68 52.5 L 38 52.5 Z" />
-              <path d="M 46 35 L 54 35 L 54 62 L 50 58 L 46 62 Z" fill="#0B132B" stroke="#B89C72" strokeWidth="2.5" />
+              <path
+                d="M 46 35 L 54 35 L 54 62 L 50 58 L 46 62 Z"
+                fill="#0B132B"
+                stroke="#B89C72"
+                strokeWidth="2.5"
+              />
             </svg>
-            <span className="font-serif text-xl font-bold text-[#0B132B] tracking-wide">
+            <span className={`font-serif font-bold text-[#0B132B] tracking-wide transition-all duration-300 group-hover:text-[#B89C72] ${
+              scrolled ? "text-sm sm:text-base" : "text-base sm:text-lg"
+            }`}>
               Harmony Publishing
             </span>
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center space-x-8">
-            <a href="#about" className="text-sm font-semibold text-gray-600 hover:text-[#0B132B] transition-colors">
-              About Us
-            </a>
-            <a href="#services" className="text-sm font-semibold text-gray-600 hover:text-[#0B132B] transition-colors">
-              Services
-            </a>
-            <a href="#estimator" className="text-sm font-semibold text-gray-600 hover:text-[#0B132B] transition-colors">
-              Book Calculator
-            </a>
-            <a href="#packages" className="text-sm font-semibold text-gray-600 hover:text-[#0B132B] transition-colors">
-              Publishing Packages
-            </a>
-            <a href="#books" className="text-sm font-semibold text-gray-600 hover:text-[#0B132B] transition-colors">
-              Books Published
-            </a>
-            <a href="#process" className="text-sm font-semibold text-gray-600 hover:text-[#0B132B] transition-colors">
-              How It Works
-            </a>
+          <nav className="hidden lg:flex items-center space-x-0.5">
+            {[
+              { href: "#about", label: "About Us" },
+              { href: "#services", label: "Services" },
+              { href: "#estimator", label: "Book Calculator" },
+              { href: "#packages", label: "Publishing Packages" },
+              { href: "#books", label: "Books Published" },
+              { href: "#process", label: "How It Works" },
+            ].map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                className={`relative font-bold tracking-wide uppercase text-gray-500 hover:text-[#0B132B] rounded-full hover:bg-[#B89C72]/10 transition-all duration-300 group ${
+                  scrolled ? "text-[10px] px-2.5 py-1" : "text-xs px-3.5 py-1.5"
+                }`}
+              >
+                {link.label}
+                <span className={`absolute bottom-0.5 h-px bg-[#B89C72] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full ${
+                  scrolled ? "left-2.5 right-2.5" : "left-3.5 right-3.5"
+                }`} />
+              </a>
+            ))}
           </nav>
 
           {/* CTA Buttons */}
-          <div className="hidden sm:flex items-center space-x-4">
+          <div className="hidden sm:flex items-center space-x-1.5">
             <Link
               href="/login"
-              className="text-sm font-bold text-[#0B132B] px-5 py-2.5 rounded-[10px] border border-[#0B132B]/10 hover:border-[#0B132B] bg-white transition-all duration-200 cursor-pointer"
+              className={`font-bold tracking-wide uppercase text-[#0B132B] hover:text-[#B89C72] transition-colors duration-200 ${
+                scrolled ? "text-[10px] px-3 py-2" : "text-xs px-4 py-2.5"
+              }`}
             >
-              Author Login
+              Login
             </Link>
             <Link
               href="/signup"
-              className="text-sm font-bold text-white px-5 py-2.5 rounded-[10px] bg-[#0B132B] hover:bg-[#16213F] shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+              className={`font-bold tracking-wider uppercase text-white rounded-full bg-gradient-to-r from-[#B89C72] to-[#9a7e55] hover:from-[#cbb28a] hover:to-[#b89c72] shadow-sm hover:shadow-[0_4px_16px_rgba(184,156,114,0.4)] transition-all duration-300 hover:-translate-y-0.5 ${
+                scrolled ? "text-[10px] px-4 py-2" : "text-xs px-5 py-2.5"
+              }`}
             >
               Get Started
             </Link>
@@ -86,15 +108,15 @@ const Navbar = () => {
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               type="button"
-              className="text-[#0B132B] hover:text-[#B89C72] p-2 focus:outline-none"
+              className="text-[#0B132B] hover:text-[#B89C72] p-2 focus:outline-none transition-colors"
             >
               {mobileMenuOpen ? (
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               ) : (
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               )}
             </button>
@@ -105,63 +127,38 @@ const Navbar = () => {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-white border-b border-gray-100 shadow-lg px-4 pt-2 pb-6 space-y-3 animate-fade-in">
-          <nav className="flex flex-col space-y-3 px-2">
-            <a
-              href="#about"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-base font-semibold text-gray-700 hover:text-[#0B132B]"
-            >
-              About Us
-            </a>
-            <a
-              href="#services"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-base font-semibold text-gray-700 hover:text-[#0B132B]"
-            >
-              Services
-            </a>
-            <a
-              href="#estimator"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-base font-semibold text-gray-700 hover:text-[#0B132B]"
-            >
-              Book Calculator
-            </a>
-            <a
-              href="#packages"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-base font-semibold text-gray-700 hover:text-[#0B132B]"
-            >
-              Publishing Packages
-            </a>
-            <a
-              href="#books"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-base font-semibold text-gray-700 hover:text-[#0B132B]"
-            >
-              Books Published
-            </a>
-            <a
-              href="#process"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-base font-semibold text-gray-700 hover:text-[#0B132B]"
-            >
-              How It Works
-            </a>
+        <div className="lg:hidden absolute top-[calc(100%+10px)] left-0 right-0 bg-[#faf8f3]/95 backdrop-blur-xl border border-[#e8dfc8]/60 rounded-2xl shadow-[0_12px_40px_rgba(11,19,43,0.14)] p-5 space-y-4 animate-fade-in mx-2">
+          <nav className="flex flex-col space-y-0.5">
+            {[
+              { href: "#about", label: "About Us" },
+              { href: "#services", label: "Services" },
+              { href: "#estimator", label: "Book Calculator" },
+              { href: "#packages", label: "Publishing Packages" },
+              { href: "#books", label: "Books Published" },
+              { href: "#process", label: "How It Works" },
+            ].map((link) => (
+              <a
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-xs font-bold uppercase tracking-wide text-gray-500 hover:text-[#0B132B] hover:bg-[#B89C72]/10 px-4 py-2.5 rounded-xl transition-all"
+              >
+                {link.label}
+              </a>
+            ))}
           </nav>
-          <div className="flex flex-col sm:hidden pt-4 border-t border-gray-100 space-y-3 px-2">
+          <div className="flex flex-col gap-2 pt-4 border-t border-[#e8dfc8]/50">
             <Link
               href="/login"
               onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center text-sm font-bold text-[#0B132B] py-3 rounded-[10px] border border-[#0B132B]/10 bg-white"
+              className="w-full text-center text-xs font-bold tracking-wide uppercase text-[#0B132B] py-3 rounded-xl border border-[#0B132B]/10 hover:border-[#B89C72] hover:text-[#B89C72] transition-all bg-white"
             >
               Author Login
             </Link>
             <Link
               href="/signup"
               onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center text-sm font-bold text-white py-3 rounded-[10px] bg-[#0B132B]"
+              className="w-full text-center text-xs font-bold tracking-wide uppercase text-white py-3 rounded-xl bg-gradient-to-r from-[#B89C72] to-[#9a7e55] shadow-sm hover:shadow-[0_4px_16px_rgba(184,156,114,0.35)] transition-all"
             >
               Get Started
             </Link>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import hero3 from "@/assets/images/hero3.png";
 
 const INTERIOR_PRICES: Record<string, number> = {
   "Black & White": 0.013,
@@ -66,8 +67,15 @@ const Estimator = () => {
   const totalCost = printingCost + serviceCost;
 
   return (
-    <section id="estimator" className="py-24 bg-white relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section
+      id="estimator"
+      className="py-24 relative overflow-hidden bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${hero3.src})` }}
+    >
+      {/* Light overlay to keep text readable and image visible */}
+      <div className="absolute inset-0 bg-white/45 pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* Header */}
         <div className="text-center mb-14">

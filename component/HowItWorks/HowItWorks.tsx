@@ -1,4 +1,6 @@
 import React from "react";
+import hero8 from "@/assets/images/hero8.png";
+import hero9 from "@/assets/images/hero9.png";
 
 const steps = [
   {
@@ -75,11 +77,18 @@ const HowItWorks = () => {
   return (
     <>
       {/* How It Works */}
-      <section id="process" className="py-24 bg-white relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-72 h-72 rounded-full border border-[#B89C72]/10 -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-        <div className="absolute bottom-0 left-10 w-24 h-24 rounded-full border border-[#B89C72]/10 pointer-events-none" />
+      <section
+        id="process"
+        className="py-24 relative overflow-hidden bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${hero8.src})` }}
+      >
+        {/* Light overlay to keep text readable and image visible */}
+        <div className="absolute inset-0 bg-white/45 pointer-events-none z-0" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="absolute top-0 right-0 w-72 h-72 rounded-full border border-[#B89C72]/10 -translate-y-1/2 translate-x-1/2 pointer-events-none z-0" />
+        <div className="absolute bottom-0 left-10 w-24 h-24 rounded-full border border-[#B89C72]/10 pointer-events-none z-0" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 bg-[#B89C72]/10 border border-[#B89C72]/20 rounded-full px-4 py-1.5 mb-5">
               <svg className="w-3 h-3 text-[#B89C72] fill-current rotate-45" viewBox="0 0 24 24">
@@ -129,8 +138,14 @@ const HowItWorks = () => {
       </section>
 
       {/* Platforms Section */}
-      <section className="py-24 bg-[#FAF8F5]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section
+        className="py-24 relative overflow-hidden bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${hero9.src})` }}
+      >
+        {/* Light overlay to keep text readable and image visible */}
+        <div className="absolute inset-0 bg-[#FAF8F5]/45 pointer-events-none z-0" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-14">
             <div className="inline-flex items-center gap-2 bg-[#B89C72]/10 border border-[#B89C72]/20 rounded-full px-4 py-1.5 mb-5">
               <svg className="w-3 h-3 text-[#B89C72] fill-current rotate-45" viewBox="0 0 24 24">

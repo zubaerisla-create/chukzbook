@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import hero6 from "@/assets/images/hero6.png";
+import hero7 from "@/assets/images/hero7.png";
 
 const categories = ["All Books", "Fiction", "Non-Fiction", "Business", "Memoir", "Children's"];
 
@@ -92,8 +93,14 @@ const Showcase = () => {
   return (
     <>
       {/* Video Section */}
-      <section className="relative bg-[#0B132B] overflow-hidden py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section
+        className="relative overflow-hidden py-36 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${hero7.src})` }}
+      >
+        {/* Dark overlay to keep text readable and image visible */}
+        <div className="absolute inset-0 bg-[#0B132B]/45 pointer-events-none z-0" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             
             {/* Left text */}

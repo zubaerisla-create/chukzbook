@@ -1,4 +1,5 @@
 import React from "react";
+import hero2 from "@/assets/images/hero2.png";
 
 const features = [
   {
@@ -59,13 +60,19 @@ const features = [
 
 const Features = () => {
   return (
-    <section id="services" className="py-24 bg-[#FAF8F5] relative overflow-hidden">
+    <section
+      id="services"
+      className="py-24 relative overflow-hidden bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${hero2.src})` }}
+    >
+      {/* Light overlay to keep text readable and image visible */}
+      <div className="absolute inset-0 bg-white/45 pointer-events-none" />
 
       {/* Decorative background watermark */}
       <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full border border-[#B89C72]/10 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full border border-[#B89C72]/10 pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* Section Header */}
         <div className="text-center mb-16">
