@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,11 +17,20 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push("/");
+    // Small timeout to ensure navigation completes before scrolling
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 50);
+  };
+
   return (
     <header
       className={`fixed z-50 top-0 left-1/2 -translate-x-1/2 transition-all duration-500 ${
         scrolled
-          ? "w-[calc(100%-2rem)] max-w-6xl mt-3 rounded-2xl shadow-[0_8px_32px_rgba(11,19,43,0.12)] py-2.5 px-6"
+          ? "w-[calc(100%-2rem)] max-w-6xl mt-0 rounded-b-2xl shadow-[0_8px_32px_rgba(11,19,43,0.12)] py-2.5 px-6"
           : "w-full max-w-7xl py-5 px-6"
       }`}
       style={{
@@ -33,7 +44,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between">
 
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2.5 group">
+          <Link href="/" onClick={handleLogoClick} className="flex items-center space-x-2.5 group">
             <svg
               viewBox="0 0 100 100"
               className={`text-[#B89C72] drop-shadow-sm transition-all duration-300 group-hover:scale-105 ${
