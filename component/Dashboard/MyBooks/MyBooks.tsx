@@ -431,9 +431,7 @@ export default function MyBooks() {
           <h1 className="font-serif text-2xl font-bold text-[#0B132B]">My Books</h1>
           <p className="text-sm text-gray-400 mt-0.5">Manage and track all your publishing projects</p>
         </div>
-        <button className="flex items-center gap-2 bg-gradient-to-r from-[#B89C72] to-[#9a7e55] text-white text-xs font-bold px-5 py-3 rounded-xl shadow-sm hover:shadow-[0_4px_14px_rgba(184,156,114,0.4)] transition-all duration-300 hover:-translate-y-0.5">
-          <Plus size={15} /> New Book Publish
-        </button>
+        
       </div>
 
       {/* ── Filter Tabs + Search ── */}
