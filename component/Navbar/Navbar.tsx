@@ -70,25 +70,28 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center space-x-0.5">
+          <nav className="hidden lg:flex items-center space-x-0">
             {[
-              { href: "#about", label: "About Us" },
+              { href: "#about", label: "About" },
               { href: "#services", label: "Services" },
-              { href: "#estimator", label: "Book Calculator" },
-              { href: "#packages", label: "Publishing Packages" },
-              { href: "#books", label: "Books Published" },
-              { href: "#process", label: "How It Works" },
+              { href: "#estimator", label: "Calculator" },
+              { href: "#packages", label: "Packages" },
+              { href: "#assistant", label: "AI Assistant" },
+              { href: "#books", label: "Books" },
+              { href: "#process", label: "Process" },
             ].map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className={`relative font-bold tracking-wide uppercase text-gray-500 hover:text-[#0B132B] rounded-full hover:bg-[#B89C72]/10 transition-all duration-300 group ${
-                  scrolled ? "text-[10px] px-2.5 py-1" : "text-xs px-3.5 py-1.5"
+                className={`relative font-bold tracking-normal uppercase text-gray-500 hover:text-[#0B132B] rounded-full hover:bg-[#B89C72]/10 transition-all duration-300 group ${
+                  scrolled
+                    ? "text-[8px] xl:text-[10px] px-1.5 xl:px-2.5 py-1"
+                    : "text-[9px] xl:text-xs px-2 xl:px-3 py-1.5"
                 }`}
               >
                 {link.label}
                 <span className={`absolute bottom-0.5 h-px bg-[#B89C72] scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full ${
-                  scrolled ? "left-2.5 right-2.5" : "left-3.5 right-3.5"
+                  scrolled ? "left-1.5 xl:left-2.5 right-1.5 xl:right-2.5" : "left-2 xl:left-3 right-2 xl:right-3"
                 }`} />
               </a>
             ))}
@@ -98,16 +101,20 @@ const Navbar = () => {
           <div className="hidden sm:flex items-center space-x-1.5">
             <Link
               href="/login"
-              className={`font-bold tracking-wide uppercase text-[#0B132B] hover:text-[#B89C72] transition-colors duration-200 ${
-                scrolled ? "text-[10px] px-3 py-2" : "text-xs px-4 py-2.5"
+              className={`font-bold tracking-normal uppercase text-[#0B132B] hover:text-[#B89C72] transition-colors duration-200 ${
+                scrolled
+                  ? "text-[9px] xl:text-[10px] px-2 py-1 xl:px-3 py-1.5"
+                  : "text-[10px] xl:text-xs px-3 py-1.5 xl:px-3.5 py-2"
               }`}
             >
               Login
             </Link>
             <Link
               href="/signup"
-              className={`font-bold tracking-wider uppercase text-white rounded-full bg-gradient-to-r from-[#B89C72] to-[#9a7e55] hover:from-[#cbb28a] hover:to-[#b89c72] shadow-sm hover:shadow-[0_4px_16px_rgba(184,156,114,0.4)] transition-all duration-300 hover:-translate-y-0.5 ${
-                scrolled ? "text-[10px] px-4 py-2" : "text-xs px-5 py-2.5"
+              className={`font-bold tracking-normal uppercase text-white rounded-full bg-gradient-to-r from-[#B89C72] to-[#9a7e55] hover:from-[#cbb28a] hover:to-[#b89c72] shadow-sm hover:shadow-[0_4px_16px_rgba(184,156,114,0.4)] transition-all duration-300 hover:-translate-y-0.5 ${
+                scrolled
+                  ? "text-[9px] xl:text-[10px] px-3 py-1.5"
+                  : "text-[10px] xl:text-xs px-3.5 py-2 xl:px-4 py-2"
               }`}
             >
               Get Started
@@ -141,12 +148,13 @@ const Navbar = () => {
         <div className="lg:hidden absolute top-[calc(100%+10px)] left-0 right-0 bg-[#faf8f3]/95 backdrop-blur-xl border border-[#e8dfc8]/60 rounded-2xl shadow-[0_12px_40px_rgba(11,19,43,0.14)] p-5 space-y-4 animate-fade-in mx-2">
           <nav className="flex flex-col space-y-0.5">
             {[
-              { href: "#about", label: "About Us" },
+              { href: "#about", label: "About" },
               { href: "#services", label: "Services" },
-              { href: "#estimator", label: "Book Calculator" },
-              { href: "#packages", label: "Publishing Packages" },
-              { href: "#books", label: "Books Published" },
-              { href: "#process", label: "How It Works" },
+              { href: "#estimator", label: "Calculator" },
+              { href: "#packages", label: "Packages" },
+              { href: "#assistant", label: "AI Assistant" },
+              { href: "#books", label: "Books" },
+              { href: "#process", label: "Process" },
             ].map((link) => (
               <a
                 key={link.href}

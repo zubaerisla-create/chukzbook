@@ -39,22 +39,28 @@ const Assistant = () => {
     { from: "assistant", text: "Hi There 👋\nI'm your AI Publishing Assistant.\nHow Can I Help You Today?" },
   ]);
   const [input, setInput] = useState("");
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (messages.length > 1) {
-      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTo({
+        top: messagesContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
     }
-  }, [messages]);
+  }, [messages, isTyping]);
 
   const send = (text?: string) => {
     const userMsg = text ?? input.trim();
     if (!userMsg) return;
     setMessages((prev) => [...prev, { from: "user", text: userMsg }]);
     setInput("");
+    setIsTyping(true);
     setTimeout(() => {
       setMessages((prev) => [...prev, { from: "assistant", text: getResponse(userMsg) }]);
-    }, 800);
+      setIsTyping(false);
+    }, 1000);
   };
 
   return (
@@ -70,7 +76,7 @@ const Assistant = () => {
             <span className="text-xs font-bold tracking-widest text-[#B89C72] uppercase">AI Publishing Assistant</span>
           </div>
           <h2 className="font-serif text-4xl sm:text-5xl font-bold text-[#0B132B] leading-tight">
-            Helping Authors<br />Turn Ideas Into<br />
+            Helping Authors | Turn Ideas Into<br />
             <span className="text-[#B89C72]">Published Success.</span>
           </h2>
         </div>
@@ -81,7 +87,7 @@ const Assistant = () => {
           <div
             className="w-full lg:flex-1 relative rounded-2xl border border-[#EBE5D6] shadow-sm overflow-hidden flex flex-col bg-cover bg-center bg-no-repeat"
             style={{
-              minHeight: "520px",
+              height: "580px",
               backgroundImage: `url(${hero5.src})`,
             }}
           >
@@ -112,21 +118,26 @@ const Assistant = () => {
             </div>
 
             {/* Suggested Pills */}
-            <div className="flex items-center gap-2 px-5 py-3 border-b border-[#EBE5D6] bg-white flex-wrap relative z-10">
-              <span className="text-xs font-semibold text-[#B89C72] mr-1">You Can Ask Me About →</span>
-              {SUGGESTED.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => send(s)}
-                  className="text-xs border border-[#EBE5D6] rounded-full px-3 py-1 text-gray-600 hover:border-[#B89C72] hover:text-[#B89C72] transition-colors"
-                >
-                  {s}
-                </button>
-              ))}
+            <div className="flex items-center gap-2 px-5 py-3 border-b border-[#EBE5D6] bg-white overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] relative z-10">
+              <span className="text-xs font-semibold text-[#B89C72] mr-2 flex-shrink-0">You Can Ask Me About:</span>
+              <div className="flex gap-2">
+                {SUGGESTED.map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => send(s)}
+                    className="text-xs border border-[#EBE5D6] rounded-full px-3 py-1.5 text-gray-600 hover:border-[#B89C72] hover:text-[#B89C72] hover:bg-[#FAF7F2] transition-colors flex-shrink-0 cursor-pointer"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-5 py-5 space-y-4 relative z-10">
+            <div
+              ref={messagesContainerRef}
+              className="flex-1 overflow-y-auto px-5 py-5 space-y-4 relative z-10"
+            >
               {messages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.from === "user" ? "justify-end" : "justify-start"}`}>
                   {msg.from === "assistant" && (
@@ -147,7 +158,20 @@ const Assistant = () => {
                   </div>
                 </div>
               ))}
-              <div ref={chatEndRef} />
+              {isTyping && (
+                <div className="flex justify-start animate-fade-in">
+                  <div className="w-7 h-7 rounded-full bg-[#0B132B] flex items-center justify-center mr-2.5 flex-shrink-0 mt-1">
+                    <svg className="w-3.5 h-3.5 text-[#B89C72]" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z" />
+                    </svg>
+                  </div>
+                  <div className="bg-white border border-[#EBE5D6] text-[#0B132B] px-4 py-3 rounded-2xl rounded-bl-none shadow-sm flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-[#B89C72] rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                    <span className="w-1.5 h-1.5 bg-[#B89C72] rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                    <span className="w-1.5 h-1.5 bg-[#B89C72] rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Input Bar */}
