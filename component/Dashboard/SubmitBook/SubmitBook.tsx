@@ -1,365 +1,707 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef } from "react";
+import Link from "next/link";
 import {
-  CloudUpload,
-  CheckCircle2,
-  ShieldCheck,
-  FileText,
   BookOpen,
-  Search,
-  Sparkles,
-  Rocket,
-  ArrowRight,
-  Bookmark,
+  FileText,
+  ClipboardCheck,
+  BadgeCheck,
+  CloudUpload,
   RefreshCw,
   Trash2,
   Lock,
+  ShieldCheck,
+  ChevronDown,
+  Edit,
+  Check,
+  ArrowRight,
+  ArrowLeft,
+  Calendar,
 } from "lucide-react";
 
-/* ─── Step config ───────────────────────────────────────────────── */
-const STEPS = [
-  { num: 1, label: "Upload Manuscript" },
-  { num: 2, label: "Book Details" },
-  { num: 3, label: "Author Information" },
-  { num: 4, label: "Publishing Preferences" },
-  { num: 5, label: "Review & Submit" },
-];
+interface UploadedFile {
+  id: string;
+  name: string;
+  size: string;
+  type: "pdf" | "docx" | "image";
+}
 
-const REQUIREMENTS = [
-  "Complete Manuscript Of Your Book",
-  "Final Version Preferred",
-  "DOCX Or PDF Format Only",
-  "All Chapters And Content Included",
-  "Remove Draft Notes And Comments",
-];
-
-const NEXT_STEPS = [
-  {
-    num: 1,
-    icon: BookOpen,
-    label: "Upload Manuscript",
-    desc: "You submit your manuscript in a secure and protected environment.",
-  },
-  {
-    num: 2,
-    icon: Search,
-    label: "Editorial Review",
-    desc: "Our team reviews your manuscript and provides valuable feedback.",
-  },
-  {
-    num: 3,
-    icon: Sparkles,
-    label: "Publishing Preparation",
-    desc: "We edit, design and prepare your book for the best reading experience.",
-  },
-  {
-    num: 4,
-    icon: Rocket,
-    label: "Book Goes Live",
-    desc: "Your book is published and distributed to leading platforms worldwide.",
-  },
-];
-
-/* ─── Main Component ─────────────────────────────────────────────── */
 export default function SubmitBook() {
-  const [currentStep] = useState(1);
-  const [dragging, setDragging] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
-  const [progress, setProgress] = useState(0);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [confirmed, setConfirmed] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const replaceInputRef = useRef<HTMLInputElement>(null);
+  const [replacingFileId, setReplacingFileId] = useState<string | null>(null);
 
-  /* Simulate upload progress */
-  const simulateUpload = (f: File) => {
-    setFile(f);
-    setProgress(0);
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 75) { clearInterval(interval); return 75; }
-        return prev + 5;
-      });
-    }, 80);
+  // Form state pre-populated to match screenshots
+  const [formData, setFormData] = useState({
+    title: "The Leader Blueprint",
+    subtitle: "A Practical Guide To Building Leadership Excellence",
+    genre: "Business & Leadership",
+    language: "English",
+    wordCount: "80000",
+    targetAudience: "Adult(18+)",
+    description: "A practical guide for current and aspiring leaders who want to build strong teams, inspire action, and achieve sustainable success.",
+    keywords: "Leadership, Success, Business, Growth",
+  });
+
+  // Files state pre-populated to match screenshots
+  const [files, setFiles] = useState<UploadedFile[]>([
+    { id: "1", name: "The Leads Blueprint.Docx", size: "2.8 MB", type: "docx" },
+    { id: "2", name: "Cover Image", size: "2.8 MB", type: "image" },
+    { id: "3", name: "Dfvdgvdvdgv", size: "2.8 MB", type: "pdf" },
+  ]);
+
+  // Handle file drops
+  const [dragging, setDragging] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragging(true);
   };
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDragLeave = () => {
+    setDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
-    const f = e.dataTransfer.files[0];
-    if (f) simulateUpload(f);
-  }, []);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (f) simulateUpload(f);
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    addFilesToList(droppedFiles);
   };
 
-  const removeFile = () => { setFile(null); setProgress(0); };
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    addFilesToList(selectedFiles);
+  };
 
-  const formatSize = (bytes: number) =>
-    bytes < 1024 * 1024
-      ? `${(bytes / 1024).toFixed(1)} KB`
-      : `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  const addFilesToList = (fileList: File[]) => {
+    const newFiles: UploadedFile[] = fileList.map((f, idx) => {
+      const ext = f.name.split(".").pop()?.toLowerCase();
+      let type: "pdf" | "docx" | "image" = "docx";
+      if (ext === "pdf") type = "pdf";
+      else if (ext && ["png", "jpg", "jpeg", "webp"].includes(ext)) type = "image";
+
+      return {
+        id: Date.now().toString() + idx,
+        name: f.name,
+        size: (f.size / (1024 * 1024)).toFixed(1) + " MB",
+        type,
+      };
+    });
+    setFiles((prev) => [...prev, ...newFiles]);
+  };
+
+  const handleRemoveFile = (id: string) => {
+    setFiles((prev) => prev.filter((f) => f.id !== id));
+  };
+
+  const triggerReplace = (id: string) => {
+    setReplacingFileId(id);
+    replaceInputRef.current?.click();
+  };
+
+  const handleReplaceFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (selected && replacingFileId) {
+      const ext = selected.name.split(".").pop()?.toLowerCase();
+      let type: "pdf" | "docx" | "image" = "docx";
+      if (ext === "pdf") type = "pdf";
+      else if (ext && ["png", "jpg", "jpeg", "webp"].includes(ext)) type = "image";
+
+      setFiles((prev) =>
+        prev.map((f) =>
+          f.id === replacingFileId
+            ? {
+                ...f,
+                name: selected.name,
+                size: (selected.size / (1024 * 1024)).toFixed(1) + " MB",
+                type,
+              }
+            : f
+        )
+      );
+    }
+    setReplacingFileId(null);
+  };
+
+  const handleReset = () => {
+    setCurrentStep(1);
+    setConfirmed(false);
+  };
 
   return (
-    <div className="space-y-6 max-w-9xl">
+    <div className="space-y-6 max-w-9xl mx-auto py-2">
+      {/* Hidden inputs for file operations */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={handleFileSelect}
+      />
+      <input
+        ref={replaceInputRef}
+        type="file"
+        className="hidden"
+        onChange={handleReplaceFileChange}
+      />
 
-      {/* ── Page Header ─────────────────────────────────────────── */}
-      <div
-        className="relative rounded-2xl overflow-hidden border border-[#EBE5D6] shadow-sm bg-gradient-to-br from-[#FAF8F5] to-[#F5EFE4]"
-        style={{ minHeight: "100px" }}
-      >
-        {/* Decorative feather */}
-        <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-20 pointer-events-none select-none text-[120px] leading-none">
-          🪶
-        </div>
-        <div className="relative z-10 px-7 py-6">
-          <h1 className="font-serif text-3xl font-bold text-[#0B132B] mb-1">
-            Upload Your Manuscript
-          </h1>
-          <p className="text-sm text-gray-500">
-            Start Your Publishing Journey By Submitting Your Completed Manuscript.
-          </p>
-        </div>
-      </div>
-
-      {/* ── Step Progress ────────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-[#EBE5D6] shadow-sm px-6 py-5">
-        <div className="flex items-center justify-between gap-1 flex-wrap sm:flex-nowrap">
-          {STEPS.map((step, i) => {
-            const done = step.num < currentStep;
-            const active = step.num === currentStep;
-            return (
-              <React.Fragment key={step.num}>
-                <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-300 ${
-                      done
-                        ? "bg-[#B89C72] border-[#B89C72] text-white"
-                        : active
-                        ? "bg-[#B89C72] border-[#B89C72] text-white shadow-[0_0_0_4px_rgba(184,156,114,0.2)]"
-                        : "bg-white border-[#D8CCBA] text-[#C0B49E]"
-                    }`}
-                  >
-                    {done ? <CheckCircle2 size={18} /> : step.num}
-                  </div>
-                  <span
-                    className={`text-[10px] font-bold text-center leading-tight max-w-[70px] ${
-                      active ? "text-[#B89C72]" : done ? "text-[#B89C72]" : "text-gray-400"
-                    }`}
-                  >
-                    {step.label}
-                  </span>
-                </div>
-                {i < STEPS.length - 1 && (
-                  <div
-                    className={`flex-1 h-0.5 mb-5 min-w-[16px] ${
-                      step.num < currentStep ? "bg-[#B89C72]" : "bg-[#EBE5D6]"
-                    }`}
-                  />
-                )}
-              </React.Fragment>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── Upload + Requirements ────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5">
-
-        {/* Left: Drop zone */}
-        <div className="space-y-4">
-          <div
-            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={handleDrop}
-            onClick={() => !file && inputRef.current?.click()}
-            className={`border-2 border-dashed rounded-2xl flex flex-col items-center justify-center py-14 px-6 transition-all duration-300 ${
-              file
-                ? "border-[#B89C72] bg-[#FAF5EE] cursor-default"
-                : dragging
-                ? "border-[#B89C72] bg-[#FAF5EE] cursor-copy"
-                : "border-[#D8CCBA] bg-[#FAF8F5] hover:border-[#B89C72] hover:bg-[#FAF5EE] cursor-pointer"
-            }`}
-          >
-            <input
-              ref={inputRef}
-              type="file"
-              accept=".doc,.docx,.pdf"
-              className="hidden"
-              onChange={handleFileChange}
-            />
-
-            {!file ? (
-              <>
-                <div className="w-16 h-16 rounded-full bg-[#F4EFE6] flex items-center justify-center mb-5">
-                  <CloudUpload size={30} className="text-[#B89C72]" />
-                </div>
-                <p className="font-bold text-[#0B132B] text-base mb-1">
-                  Drag & Drop Your Manuscript Here
-                </p>
-                <p className="text-gray-400 text-sm mb-5">or</p>
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
-                  className="bg-gradient-to-r from-[#B89C72] to-[#9a7e55] hover:from-[#cbb28a] hover:to-[#b89c72] text-white font-bold text-sm px-8 py-3 rounded-xl shadow-sm hover:shadow-[0_4px_14px_rgba(184,156,114,0.4)] transition-all duration-300 hover:-translate-y-0.5"
-                >
-                  Browse Files
-                </button>
-                <p className="text-xs text-gray-400 mt-5">
-                  DOC • DOCX • PDF &nbsp;|&nbsp; Max Size: 100MB
-                </p>
-              </>
-            ) : (
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-14 h-14 rounded-full bg-[#B89C72]/20 flex items-center justify-center">
-                  <CheckCircle2 size={28} className="text-[#B89C72]" />
-                </div>
-                <p className="font-bold text-[#0B132B]">File Ready to Upload</p>
-                <p className="text-xs text-gray-400">{file.name}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Selected File card */}
-          {file && (
-            <div className="bg-white border border-[#EBE5D6] rounded-2xl p-5 space-y-4 shadow-sm">
-              <p className="text-sm font-bold text-[#0B132B]">Selected File</p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center flex-shrink-0">
-                  <FileText size={18} className="text-blue-500" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-[#0B132B] truncate">{file.name}</p>
-                  <p className="text-xs text-gray-400">{formatSize(file.size)}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => inputRef.current?.click()}
-                    className="flex items-center gap-1.5 text-xs font-bold border border-[#B89C72] text-[#B89C72] hover:bg-[#B89C72] hover:text-white px-3 py-1.5 rounded-lg transition-all duration-200"
-                  >
-                    <RefreshCw size={12} /> Replace File
-                  </button>
-                  <button
-                    onClick={removeFile}
-                    className="flex items-center gap-1.5 text-xs font-bold border border-red-200 text-red-400 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-all duration-200"
-                  >
-                    <Trash2 size={12} /> Remove
-                  </button>
-                </div>
-              </div>
-
-              {/* Progress bar */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-bold text-gray-500">Upload Progress</span>
-                  <span className="text-xs font-bold text-[#B89C72]">{progress}%</span>
-                </div>
-                <div className="w-full h-2 bg-[#EBE5D6] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-[#B89C72] to-[#9a7e55] rounded-full transition-all duration-300"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Security note */}
-              <div className="flex items-start gap-3 bg-[#FAF8F5] border border-[#EBE5D6] rounded-xl p-4">
-                <div className="w-9 h-9 rounded-full bg-[#F4EFE6] flex items-center justify-center flex-shrink-0">
-                  <Lock size={16} className="text-[#B89C72]" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-[#0B132B]">
-                    Your manuscript is secure and confidential.
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Only the Harmony Publishing team can access your files.
-                  </p>
-                </div>
-              </div>
+      {/* BANNER & STEPPER (hidden in step 4 - Success) */}
+      {currentStep < 4 && (
+        <>
+          {/* Top Banner Header */}
+          <div className="relative rounded-2xl overflow-hidden border border-[#EBE5D6] bg-gradient-to-br from-[#FAF8F5] to-[#F5EFE4] px-8 py-8 shadow-sm">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-[#FAF5EE] via-transparent to-transparent pointer-events-none opacity-60" />
+            <div className="absolute right-10 top-1/2 -translate-y-1/2 opacity-25 pointer-events-none select-none text-[85px] leading-none">
+              🪶
             </div>
-          )}
-        </div>
-
-        {/* Right: Requirements */}
-        <div className="bg-white rounded-2xl border border-[#EBE5D6] shadow-sm p-6 h-fit">
-          <div className="flex items-start gap-3 mb-5">
-            <div className="w-10 h-10 rounded-xl bg-[#F4EFE6] flex items-center justify-center flex-shrink-0">
-              <FileText size={18} className="text-[#B89C72]" />
-            </div>
-            <div>
-              <h3 className="font-bold text-[#0B132B] text-sm">Manuscript Requirements</h3>
-              <p className="text-xs text-gray-400 leading-relaxed mt-0.5">
-                To ensure a smooth review process, please follow our manuscript guidelines.
+            <div className="relative z-10">
+              <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#0B132B] mb-2 leading-tight">
+                Let&apos;s Start Your Book Submission
+              </h1>
+              <p className="text-sm text-gray-500 font-medium">
+                File In Your Book Details To Begin Your Publishing Journey
               </p>
             </div>
           </div>
 
-          <ul className="space-y-3 mb-6">
-            {REQUIREMENTS.map((req) => (
-              <li key={req} className="flex items-start gap-2.5">
-                <CheckCircle2 size={16} className="text-[#B89C72] flex-shrink-0 mt-0.5" />
-                <span className="text-sm text-[#0B132B]">{req}</span>
-              </li>
-            ))}
-          </ul>
+          {/* Stepper Wizard */}
+          <div className="bg-white rounded-2xl border border-[#EBE5D6] shadow-sm px-6 py-6 sm:px-12">
+            <div className="flex items-center justify-between relative">
+              {/* Desktop Stepper Connections */}
+              <div className="absolute top-[22px] left-[5%] right-[5%] h-0.5 bg-[#FAF7F2] -z-0" />
+              <div
+                className="absolute top-[22px] left-[5%] h-0.5 bg-[#B89C72] transition-all duration-500 -z-0"
+                style={{
+                  width: `${((currentStep - 1) / 3) * 90}%`,
+                }}
+              />
 
-          {/* Privacy note */}
-          <div className="flex items-start gap-3 bg-[#FAF8F5] border border-[#EBE5D6] rounded-xl p-4">
-            <ShieldCheck size={18} className="text-[#B89C72] flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-bold text-[#0B132B]">We Value Your Privacy.</p>
-              <p className="text-xs text-gray-400">Your Manuscript Is Secure And Confidential.</p>
+              {[
+                { num: 1, label: "Book Details", icon: BookOpen },
+                { num: 2, label: "Upload Manuscript", icon: FileText },
+                { num: 3, label: "Review & Submit", icon: ClipboardCheck },
+                { num: 4, label: "Success", icon: BadgeCheck },
+              ].map((step) => {
+                const isActive = currentStep === step.num;
+                const isCompleted = currentStep > step.num;
+                const Icon = step.icon;
+
+                return (
+                  <div key={step.num} className="flex flex-col items-center relative z-10 flex-1">
+                    <div
+                      className={`w-11 h-11 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
+                        isCompleted
+                          ? "bg-[#B89C72] border-[#B89C72] text-white"
+                          : isActive
+                          ? "bg-white border-[#B89C72] text-[#B89C72] shadow-[0_0_0_4px_rgba(184,156,114,0.25)]"
+                          : "bg-white border-[#D8CCBA] text-gray-400"
+                      }`}
+                    >
+                      {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+                    </div>
+                    <span
+                      className={`text-xs font-bold mt-2 text-center transition-colors ${
+                        isActive || isCompleted ? "text-[#0B132B]" : "text-gray-400"
+                      }`}
+                    >
+                      {step.label}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
-      {/* ── What Happens Next ────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-[#EBE5D6] shadow-sm p-6">
-        <h2 className="font-serif text-xl font-bold text-[#0B132B] mb-6">What Happens Next?</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          {NEXT_STEPS.map((step, i) => {
-            const Icon = step.icon;
-            return (
-              <div key={step.num} className="flex flex-col items-center text-center relative">
-                {/* connector arrow */}
-                {i < NEXT_STEPS.length - 1 && (
-                  <ArrowRight
-                    size={18}
-                    className="absolute top-5 -right-3 text-[#B89C72]/40 hidden sm:block z-10"
-                  />
-                )}
-                <div className="w-12 h-12 rounded-2xl bg-[#FAF5EE] border border-[#EBE5D6] flex items-center justify-center mb-3 relative">
-                  <Icon size={22} className="text-[#B89C72]" />
-                  <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-[#B89C72] text-white text-[9px] font-bold flex items-center justify-center">
-                    {step.num}
-                  </span>
-                </div>
-                <p className="text-xs font-bold text-[#0B132B] mb-1">{step.label}</p>
-                <p className="text-[11px] text-gray-400 leading-relaxed">{step.desc}</p>
+      {/* STEP 1: BOOK DETAILS */}
+      {currentStep === 1 && (
+        <div className="bg-white rounded-2xl border border-[#EBE5D6] shadow-sm p-6 sm:p-8 space-y-6">
+          <div className="flex items-center gap-4 pb-4 border-b border-[#FAF7F2]">
+            <div className="w-12 h-12 rounded-full bg-[#FAF5EE] border border-[#EBE5D6] flex items-center justify-center flex-shrink-0">
+              <BookOpen className="text-[#B89C72] w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="font-serif text-2xl font-bold text-[#0B132B]">Book Details</h2>
+              <p className="text-xs text-gray-400">Provide Basic Information About Your Book</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Book Title */}
+            <div>
+              <label className="text-sm font-bold text-[#0B132B] mb-2 block">Book Title</label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Enter your book title"
+                className="w-full text-sm bg-[#FAF7F2] border border-[#EBE5D6] rounded-xl px-4 py-3 text-[#0B132B] focus:outline-none focus:border-[#B89C72]"
+              />
+            </div>
+
+            {/* Subtitle */}
+            <div>
+              <label className="text-sm font-bold text-[#0B132B] mb-2 block">
+                Subtitle<span className="text-gray-400 font-normal">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                value={formData.subtitle}
+                onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+                placeholder="Enter subtitle (if any)"
+                className="w-full text-sm bg-[#FAF7F2] border border-[#EBE5D6] rounded-xl px-4 py-3 text-[#0B132B] focus:outline-none focus:border-[#B89C72]"
+              />
+            </div>
+
+            {/* Genre */}
+            <div>
+              <label className="text-sm font-bold text-[#0B132B] mb-2 block">Genre</label>
+              <div className="relative">
+                <select
+                  value={formData.genre}
+                  onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
+                  className="w-full text-sm bg-[#FAF7F2] border border-[#EBE5D6] rounded-xl px-4 py-3 text-[#0B132B] focus:outline-none focus:border-[#B89C72] appearance-none cursor-pointer"
+                >
+                  <option value="">Select genre</option>
+                  <option value="Business & Leadership">Business & Leadership</option>
+                  <option value="Fiction">Fiction</option>
+                  <option value="Non-Fiction">Non-Fiction</option>
+                  <option value="Self-Help">Self-Help</option>
+                  <option value="Mystery">Mystery</option>
+                </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" />
               </div>
-            );
-          })}
+            </div>
+
+            {/* Language */}
+            <div>
+              <label className="text-sm font-bold text-[#0B132B] mb-2 block">Language</label>
+              <div className="relative">
+                <select
+                  value={formData.language}
+                  onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                  className="w-full text-sm bg-[#FAF7F2] border border-[#EBE5D6] rounded-xl px-4 py-3 text-[#0B132B] focus:outline-none focus:border-[#B89C72] appearance-none cursor-pointer"
+                >
+                  <option value="English">🇺🇸 English</option>
+                  <option value="Spanish">🇪🇸 Spanish</option>
+                  <option value="French">🇫🇷 French</option>
+                  <option value="German">🇩🇪 German</option>
+                </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" />
+              </div>
+            </div>
+
+            {/* Word Count */}
+            <div>
+              <label className="text-sm font-bold text-[#0B132B] mb-2 block">Word</label>
+              <input
+                type="text"
+                value={formData.wordCount}
+                onChange={(e) => setFormData({ ...formData, wordCount: e.target.value })}
+                placeholder="E.G. 800000"
+                className="w-full text-sm bg-[#FAF7F2] border border-[#EBE5D6] rounded-xl px-4 py-3 text-[#0B132B] focus:outline-none focus:border-[#B89C72]"
+              />
+            </div>
+
+            {/* Target Audience */}
+            <div>
+              <label className="text-sm font-bold text-[#0B132B] mb-2 block">Target Audience</label>
+              <div className="relative">
+                <select
+                  value={formData.targetAudience}
+                  onChange={(e) => setFormData({ ...formData, targetAudience: e.target.value })}
+                  className="w-full text-sm bg-[#FAF7F2] border border-[#EBE5D6] rounded-xl px-4 py-3 text-[#0B132B] focus:outline-none focus:border-[#B89C72] appearance-none cursor-pointer"
+                >
+                  <option value="Adult(18+)">Adult(18+)</option>
+                  <option value="Young Adult">Young Adult</option>
+                  <option value="Kids">Kids</option>
+                </select>
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" />
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="md:col-span-2">
+              <label className="text-sm font-bold text-[#0B132B] mb-2 block">Descriptions</label>
+              <textarea
+                rows={4}
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Describe your book in a few sentence"
+                className="w-full text-sm bg-[#FAF7F2] border border-[#EBE5D6] rounded-xl px-4 py-3 text-[#0B132B] focus:outline-none focus:border-[#B89C72] resize-none"
+              />
+            </div>
+
+            {/* Key Themes / Keywords */}
+            <div className="md:col-span-2">
+              <label className="text-sm font-bold text-[#0B132B] mb-2 block">
+                Key Themes / Keywords<span className="text-gray-400 font-normal">(Optional)</span>
+              </label>
+              <input
+                type="text"
+                value={formData.keywords}
+                onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
+                placeholder="E.G. leadership, success, motivations"
+                className="w-full text-sm bg-[#FAF7F2] border border-[#EBE5D6] rounded-xl px-4 py-3 text-[#0B132B] focus:outline-none focus:border-[#B89C72]"
+              />
+            </div>
+          </div>
+
+          <div className="pt-4 flex justify-end">
+            <button
+              onClick={() => setCurrentStep(2)}
+              className="bg-[#B89C72] hover:bg-[#9a7e55] text-white font-bold text-sm px-8 py-3.5 rounded-xl shadow-sm hover:shadow-[0_4px_16px_rgba(184,156,114,0.35)] transition-all duration-300 hover:-translate-y-0.5 flex items-center gap-2 cursor-pointer"
+            >
+              Continue To Upload <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* ── Bottom Actions ───────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row items-center gap-3 pb-4">
-        <button
-          disabled={!file || progress < 75}
-          className={`flex items-center gap-2 font-bold text-sm px-7 py-3.5 rounded-xl transition-all duration-300 ${
-            file && progress >= 75
-              ? "bg-gradient-to-r from-[#B89C72] to-[#9a7e55] text-white shadow-sm hover:shadow-[0_4px_14px_rgba(184,156,114,0.4)] hover:-translate-y-0.5"
-              : "bg-[#EBE5D6] text-gray-400 cursor-not-allowed"
-          }`}
-        >
-          Continue to Book Details <ArrowRight size={16} />
-        </button>
-        <button className="flex items-center gap-2 font-bold text-sm px-7 py-3.5 rounded-xl border border-[#EBE5D6] text-gray-500 hover:border-[#B89C72] hover:text-[#B89C72] transition-all duration-300">
-          <Bookmark size={15} /> Save & Continue Later
-        </button>
-      </div>
+      {/* STEP 2: UPLOAD MANUSCRIPT */}
+      {currentStep === 2 && (
+        <div className="bg-white rounded-2xl border border-[#EBE5D6] shadow-sm p-6 sm:p-8 space-y-6">
+          <div className="flex items-center gap-4 pb-4 border-b border-[#FAF7F2]">
+            <div className="w-12 h-12 rounded-full bg-[#FAF5EE] border border-[#EBE5D6] flex items-center justify-center flex-shrink-0">
+              <FileText className="text-[#B89C72] w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="font-serif text-2xl font-bold text-[#0B132B]">Upload Your Manuscript</h2>
+              <p className="text-xs text-gray-400">Upload your completed manuscript and supporting materials to begin the publishing process</p>
+            </div>
+          </div>
 
+          {/* Drag & Drop Upload Zone */}
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-2xl flex flex-col items-center justify-center py-16 px-6 transition-all duration-300 ${
+              dragging
+                ? "border-[#B89C72] bg-[#FAF5EE] cursor-copy scale-[0.99]"
+                : "border-[#EBE5D6] bg-[#FAF8F5] hover:border-[#B89C72] hover:bg-[#FAF5EE] cursor-pointer"
+            }`}
+          >
+            <div className="w-16 h-16 rounded-full bg-[#FAF5EE] border border-[#EBE5D6] flex items-center justify-center mb-4">
+              <CloudUpload className="w-7 h-7 text-[#B89C72]" />
+            </div>
+            <p className="font-bold text-[#0B132B] text-base mb-1 text-center">
+              Drag And Drop Files Here
+            </p>
+            <p className="text-gray-400 text-xs mb-4">Or</p>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                fileInputRef.current?.click();
+              }}
+              className="bg-[#B89C72] hover:bg-[#9a7e55] text-white font-bold text-xs px-6 py-3 rounded-xl shadow-sm transition-all duration-300"
+            >
+              Browse Files
+            </button>
+            <p className="text-[10px] text-gray-400 mt-4 tracking-wide text-center">
+              DOC, DOCX, PDF, JPG, PNG up to 5MB each
+            </p>
+          </div>
+
+          {/* Selected Files List */}
+          {files.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-[#0B132B] border-b border-[#FAF7F2] pb-2">Selected File</h3>
+              <div className="space-y-3">
+                {files.map((file) => (
+                  <div
+                    key={file.id}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-[#FAF8F5] border border-[#EBE5D6] rounded-2xl gap-4 shadow-sm"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-white border border-[#EBE5D6] flex-shrink-0 shadow-sm">
+                        {file.type === "pdf" && <FileText className="text-red-500 w-5 h-5" />}
+                        {file.type === "docx" && <FileText className="text-blue-500 w-5 h-5" />}
+                        {file.type === "image" && <FileText className="text-[#B89C72] w-5 h-5" />}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-[#0B132B] truncate max-w-xs">{file.name}</p>
+                        <p className="text-xs text-gray-400 font-medium">{file.size}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 self-end sm:self-center">
+                      <button
+                        onClick={() => triggerReplace(file.id)}
+                        className="flex items-center gap-1.5 text-xs font-bold border border-[#EBE5D6] text-gray-600 bg-white hover:border-[#B89C72] hover:text-[#B89C72] px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-sm"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" /> Replace File
+                      </button>
+                      <button
+                        onClick={() => handleRemoveFile(file.id)}
+                        className="flex items-center gap-1.5 text-xs font-bold border border-red-100 text-red-500 bg-white hover:bg-red-50 px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-sm"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="pt-4 flex flex-col sm:flex-row items-center gap-3 justify-between">
+            <button
+              onClick={() => setCurrentStep(1)}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 font-bold text-sm px-8 py-3.5 rounded-xl border border-[#EBE5D6] text-gray-600 hover:border-[#B89C72] hover:text-[#B89C72] hover:bg-[#FAF7F2] transition-all cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back
+            </button>
+            <button
+              onClick={() => setCurrentStep(3)}
+              disabled={files.length === 0}
+              className={`w-full sm:w-auto flex items-center justify-center gap-2 font-bold text-sm px-8 py-3.5 rounded-xl transition-all duration-300 ${
+                files.length > 0
+                  ? "bg-[#B89C72] hover:bg-[#9a7e55] text-white shadow-sm hover:shadow-[0_4px_16px_rgba(184,156,114,0.35)] hover:-translate-y-0.5 cursor-pointer"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              Review & Submit <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 3: REVIEW & SUBMIT */}
+      {currentStep === 3 && (
+        <div className="bg-white rounded-2xl border border-[#EBE5D6] shadow-sm p-6 sm:p-8 space-y-8">
+          <div className="flex items-center gap-4 pb-4 border-b border-[#FAF7F2]">
+            <div className="w-12 h-12 rounded-full bg-[#FAF5EE] border border-[#EBE5D6] flex items-center justify-center flex-shrink-0">
+              <ClipboardCheck className="text-[#B89C72] w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="font-serif text-2xl font-bold text-[#0B132B]">Review & Submit</h2>
+              <p className="text-xs text-gray-400">Please review all the information below, you can edit any section if needed.</p>
+            </div>
+          </div>
+
+          {/* Section 1: Book Information */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between border-b border-[#FAF7F2] pb-2">
+              <div className="flex items-center gap-2.5">
+                <span className="w-6 h-6 rounded-full bg-[#FAF5EE] text-[#B89C72] font-bold text-xs flex items-center justify-center border border-[#EBE5D6]">
+                  1
+                </span>
+                <h3 className="text-base font-bold text-[#0B132B]">Book Information</h3>
+              </div>
+              <button
+                onClick={() => setCurrentStep(1)}
+                className="flex items-center gap-1.5 text-xs font-bold text-[#B89C72] border border-[#B89C72]/30 rounded-xl px-3.5 py-2 hover:bg-[#B89C72]/10 transition-colors cursor-pointer"
+              >
+                <Edit className="w-3.5 h-3.5" /> Edit Details
+              </button>
+            </div>
+
+            <div className="border border-[#EBE5D6] rounded-2xl overflow-hidden shadow-sm">
+              <table className="w-full text-left border-collapse text-sm">
+                <tbody>
+                  {[
+                    { label: "Book Title", val: formData.title },
+                    { label: "Subtitle", val: formData.subtitle || "—" },
+                    { label: "Genre", val: formData.genre },
+                    { label: "Language", val: formData.language },
+                    { label: "Target Audience", val: formData.targetAudience },
+                    { label: "Keywords", val: formData.keywords || "—" },
+                    { label: "Book Description", val: formData.description },
+                  ].map((row, idx) => (
+                    <tr
+                      key={row.label}
+                      className={`border-b border-[#FAF7F2] last:border-0 ${
+                        idx % 2 === 0 ? "bg-white" : "bg-[#FAF8F5]/40"
+                      }`}
+                    >
+                      <td className="px-6 py-4 font-bold text-[#0B132B] w-1/4 align-top border-r border-[#FAF7F2]">
+                        {row.label}
+                      </td>
+                      <td className="px-6 py-4 text-gray-600 leading-relaxed whitespace-pre-wrap">
+                        {row.val}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Section 2: Manuscript Details */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2.5 border-b border-[#FAF7F2] pb-2">
+              <span className="w-6 h-6 rounded-full bg-[#FAF5EE] text-[#B89C72] font-bold text-xs flex items-center justify-center border border-[#EBE5D6]">
+                2
+              </span>
+              <h3 className="text-base font-bold text-[#0B132B]">Manuscript Details</h3>
+            </div>
+
+            <div className="space-y-3">
+              {files.map((file) => (
+                <div
+                  key={file.id}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-[#FAF8F5] border border-[#EBE5D6] rounded-2xl gap-4 shadow-sm"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-white border border-[#EBE5D6] flex-shrink-0 shadow-sm">
+                      {file.type === "pdf" && <FileText className="text-red-500 w-5 h-5" />}
+                      {file.type === "docx" && <FileText className="text-blue-500 w-5 h-5" />}
+                      {file.type === "image" && <FileText className="text-[#B89C72] w-5 h-5" />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-[#0B132B] truncate max-w-xs">{file.name}</p>
+                      <p className="text-xs text-gray-400 font-medium">{file.size}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 self-end sm:self-center">
+                    <button
+                      onClick={() => triggerReplace(file.id)}
+                      className="flex items-center gap-1.5 text-xs font-bold border border-[#EBE5D6] text-gray-600 bg-white hover:border-[#B89C72] hover:text-[#B89C72] px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-sm"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" /> Replace File
+                    </button>
+                    <button
+                      onClick={() => handleRemoveFile(file.id)}
+                      className="flex items-center gap-1.5 text-xs font-bold border border-red-100 text-red-500 bg-white hover:bg-red-50 px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-sm"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Declaration check box */}
+          <div className="flex items-start gap-3 bg-[#FFFDF9] border border-[#F5EFE4] rounded-2xl p-5 shadow-sm">
+            <div className="relative flex items-center mt-0.5">
+              <input
+                type="checkbox"
+                id="confirm-rights"
+                checked={confirmed}
+                onChange={(e) => setConfirmed(e.target.checked)}
+                className="w-5 h-5 text-[#B89C72] border-[#EBE5D6] rounded focus:ring-[#B89C72] focus:ring-offset-0 cursor-pointer appearance-none checked:bg-[#B89C72] checked:border-[#B89C72] border-2 transition-all relative flex items-center justify-center"
+              />
+              {confirmed && (
+                <Check className="w-3.5 h-3.5 text-white absolute pointer-events-none stroke-[3]" />
+              )}
+            </div>
+            <label htmlFor="confirm-rights" className="text-xs text-gray-600 leading-relaxed cursor-pointer select-none font-medium">
+              I confirm that all information provided is accurate and that I own the rights to this manuscript. I understand that harmony publishing will begin the publishing process after submission.
+            </label>
+          </div>
+
+          {/* Action buttons */}
+          <div className="pt-4 flex flex-col sm:flex-row items-center gap-3 justify-between">
+            <button
+              onClick={() => setCurrentStep(2)}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 font-bold text-sm px-8 py-3.5 rounded-xl border border-[#EBE5D6] text-gray-600 hover:border-[#B89C72] hover:text-[#B89C72] hover:bg-[#FAF7F2] transition-all cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back
+            </button>
+            <button
+              onClick={() => setCurrentStep(4)}
+              disabled={!confirmed}
+              className={`w-full sm:w-auto flex items-center justify-center gap-2 font-bold text-sm px-8 py-3.5 rounded-xl transition-all duration-300 ${
+                confirmed
+                  ? "bg-[#B89C72] hover:bg-[#9a7e55] text-white shadow-sm hover:shadow-[0_4px_16px_rgba(184,156,114,0.35)] hover:-translate-y-0.5 cursor-pointer"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              Submit My Book <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 4: SUCCESS */}
+      {currentStep === 4 && (
+        <div className="relative bg-white border border-[#EBE5D6] rounded-2xl shadow-md p-8 sm:p-12 text-center overflow-hidden max-w-3xl mx-auto my-4">
+          {/* Decorative floating shapes in background */}
+          <div className="absolute top-8 left-12 opacity-30 select-none text-2xl animate-pulse">🧡</div>
+          <div className="absolute top-12 right-16 opacity-30 select-none text-3xl rotate-12">✈️</div>
+          <div className="absolute bottom-16 left-16 opacity-25 select-none text-4xl -rotate-12">🌿</div>
+          <div className="absolute bottom-12 right-24 opacity-30 select-none text-2xl">🍎</div>
+          
+          {/* Custom SVG elements for extra background flair */}
+          <svg className="absolute -left-10 top-1/4 w-32 h-32 text-[#B89C72]/10" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="5 5" />
+          </svg>
+
+          {/* Main checkmark icon */}
+          <div className="w-20 h-20 rounded-full bg-green-500 flex items-center justify-center mx-auto mb-6 shadow-md transition-transform duration-500 scale-105">
+            <Check className="w-10 h-10 text-white stroke-[3.5]" />
+          </div>
+
+          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-[#0B132B] mb-4">
+            Book Submitted Successfully!
+          </h2>
+
+          <p className="text-sm text-gray-500 max-w-xl mx-auto leading-relaxed mb-8">
+            Thank You, Author! We&apos;ve Received Your Manuscript And Our Team Is Excited To Help Bring Your Book To Life.
+          </p>
+
+          {/* Submission Info Box */}
+          <div className="bg-[#E8F5E9]/40 border border-green-100 rounded-2xl px-6 py-4 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-8 max-w-lg mx-auto mb-8 shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-green-100/60 flex items-center justify-center text-green-700">
+                <FileText className="w-4 h-4" />
+              </div>
+              <div className="text-left">
+                <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Submission Id</p>
+                <p className="text-xs font-bold text-green-800">Hp 2025-00125</p>
+              </div>
+            </div>
+            <div className="w-px h-8 bg-green-200 hidden sm:block" />
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-green-100/60 flex items-center justify-center text-green-700">
+                <Calendar className="w-4 h-4" />
+              </div>
+              <div className="text-left">
+                <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Submission On</p>
+                <p className="text-xs font-bold text-green-800">May 20, 2025 At 10:30 Am</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Inkpot and Quill graphic aligned in the bottom right context */}
+          <div className="relative max-w-xs mx-auto mb-6 flex justify-center items-center">
+            {/* Elegant SVG Inkpot and Quill */}
+            <svg viewBox="0 0 100 100" className="w-24 h-24 text-[#B89C72]">
+              {/* Inkpot base */}
+              <path d="M30 75 L70 75 L65 55 L35 55 Z" fill="currentColor" opacity="0.8" />
+              <path d="M40 55 L60 55 L58 48 L42 48 Z" fill="#0B132B" />
+              {/* Quill Pen */}
+              <path d="M45 48 C 45 48, 55 30, 80 15 C 80 15, 68 35, 52 48" fill="none" stroke="currentColor" strokeWidth="2.5" />
+              <line x1="45" y1="48" x2="80" y2="15" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+          </div>
+
+          {/* Reset button */}
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={handleReset}
+              className="bg-[#B89C72] hover:bg-[#9a7e55] text-white font-bold text-sm px-8 py-3.5 rounded-xl shadow-sm hover:shadow-[0_4px_16px_rgba(184,156,114,0.35)] transition-all duration-300 hover:-translate-y-0.5 cursor-pointer"
+            >
+              Submit Another Book
+            </button>
+            <Link
+              href="/dashboard"
+              className="flex items-center justify-center gap-2 font-bold text-sm px-8 py-3.5 rounded-xl border border-[#EBE5D6] text-gray-600 hover:border-[#B89C72] hover:text-[#B89C72] hover:bg-[#FAF7F2] transition-all cursor-pointer"
+            >
+              Go to Dashboard
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
