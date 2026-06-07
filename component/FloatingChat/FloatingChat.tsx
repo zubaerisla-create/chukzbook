@@ -222,7 +222,7 @@ export default function FloatingChat() {
           transition-all duration-300 ease-in-out origin-bottom-right
           ${isOpen ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-90 pointer-events-none"}
         `}
-        style={{ maxHeight: "min(600px, calc(100vh - 120px))" }}
+        style={{ height: "min(680px, calc(100vh - 120px))" }}
       >
 
         {/* ── Header ── */}
