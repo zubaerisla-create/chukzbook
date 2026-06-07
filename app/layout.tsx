@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
+import { ReduxProvider } from "@/redux/provider";
+import FloatingChat from "@/component/FloatingChat/FloatingChat";
 
 const cormorantGaramond = Cormorant_Garamond({
   variable: "--font-serif",
@@ -28,7 +30,12 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${cormorantGaramond.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans bg-[#FAF8F5] text-[#0c1424]">{children}</body>
+      <body className="min-h-full flex flex-col font-sans bg-[#FAF8F5] text-[#0c1424]">
+        <ReduxProvider>
+          {children}
+          <FloatingChat />
+        </ReduxProvider>
+      </body>
     </html>
   );
 }

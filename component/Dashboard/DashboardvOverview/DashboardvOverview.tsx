@@ -18,35 +18,78 @@ import {
   Compass,
   FileSpreadsheet,
 } from "lucide-react";
+import { 
+  useGetProfileQuery, 
+  useListBooksQuery, 
+  useListNotificationsQuery, 
+  useGetMyPackageQuery 
+} from "@/redux/api/authApi";
 
-/* ─── Data ──────────────────────────────────────────────────────── */
+/* ─── Helpers ────────────────────────────────────────────────────── */
+function activeStep(progress: number) {
+  if (progress <= 20) return 0;
+  if (progress <= 40) return 1;
+  if (progress <= 60) return 2;
+  if (progress <= 80) return 3;
+  return 4;
+}
 
-const NOTIFICATIONS = [
-  {
-    id: "1",
-    title: "Welcome To Harmony Publishing!",
-    desc: "We're Excited To Help You Publish Your Book ..",
-    time: "2 Hours Ago",
-  },
-  {
-    id: "2",
-    title: "Welcome To Harmony Publishing!",
-    desc: "We're Excited To Help You Publish Your Book ..",
-    time: "2 Hours Ago",
-  },
-  {
-    id: "3",
-    title: "Welcome To Harmony Publishing!",
-    desc: "We're Excited To Help You Publish Your Book ..",
-    time: "2 Hours Ago",
-  },
-];
+function getProgressFromStatus(statusStr: string) {
+  const s = statusStr?.toLowerCase();
+  if (s === "published") return 100;
+  if (s === "on hold" || s === "onhold") return 20;
+  if (s === "in review" || s === "inreview" || s === "review") return 60;
+  if (s === "submitted") return 20;
+  if (s === "editing") return 40;
+  if (s === "formatting") return 80;
+  if (s === "in progress" || s === "inprogress") return 40;
+  return 30; // default
+}
+
+function formatTimeAgo(dateStr: string) {
+  try {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    if (isNaN(diffMs)) return dateStr;
+    
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  } catch (e) {
+    return dateStr;
+  }
+}
 
 /* ─── Main Component ─────────────────────────────────────────────── */
 
 export default function DashboardvOverview() {
+  const { data: profile } = useGetProfileQuery();
+  const { data: books, isLoading: loadingBooks } = useListBooksQuery();
+  const { data: notifications } = useListNotificationsQuery();
+  const { data: myPackage } = useGetMyPackageQuery();
+
+  const authorName = profile?.first_name || "Author";
+  const hasBooks = books && books.length > 0;
+  
+  // Get latest book details
+  const latestBook = hasBooks ? books[books.length - 1] : null;
+  const progress = latestBook ? getProgressFromStatus(latestBook.status) : 0;
+  const currentStepIndex = activeStep(progress);
+
+  const notificationsFeed = notifications?.slice(0, 3) || [];
+
+  const formattedDate = myPackage?.created_at
+    ? new Date(myPackage.created_at).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+    : "May 20, 2025";
+
   return (
-    <div className="space-y-6 max-w-9xl mx-auto py-2">
+    <div className="space-y-6 max-w-9xl mx-auto py-2 font-sans">
       {/* ── Welcome Header ───────────────────────────────────────── */}
       <div
         className="relative rounded-2xl overflow-hidden border border-[#EBE5D6] shadow-sm bg-gradient-to-br from-[#FAF8F5] to-[#F5EFE4]"
@@ -65,7 +108,7 @@ export default function DashboardvOverview() {
           {/* Left: welcome text */}
           <div>
             <h1 className="font-serif text-3xl font-bold text-[#0B132B] mb-2 leading-tight">
-              Welcome Back, John! 👋
+              Welcome Back, {authorName}! 👋
             </h1>
             <p className="text-sm text-gray-500 font-medium leading-relaxed max-w-md">
               Track Your Book&apos;s Progress And Stay Updated At Every Step Of The Publishing Journey.
@@ -89,17 +132,23 @@ export default function DashboardvOverview() {
         <div className="lg:col-span-2 bg-white rounded-2xl border border-[#EBE5D6] shadow-sm p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden">
           <div className="space-y-4 flex-1">
             <h2 className="font-serif text-2xl font-bold text-[#0B132B]">
-              Let&apos;s Publish Your Book
+              {hasBooks ? "Your Book is in Progress!" : "Let's Publish Your Book"}
             </h2>
             <p className="text-sm text-gray-500 leading-relaxed max-w-sm">
-              You&apos;re just a few steps away from seeing your book published and available worldwide.
+              {hasBooks 
+                ? `You've submitted "${latestBook?.title}". Track its status or submit another manuscript.` 
+                : "You're just a few steps away from seeing your book published and available worldwide."
+              }
             </p>
             
             {/* Progress status */}
             <div className="pt-2">
-              <span className="text-sm font-bold text-[#B89C72] mb-2 block">0% Completed</span>
+              <span className="text-sm font-bold text-[#B89C72] mb-2 block">{progress}% Completed</span>
               <div className="w-full h-3 bg-[#FAF7F2] border border-[#EBE5D6] rounded-full overflow-hidden">
-                <div className="w-0 h-full bg-[#B89C72] rounded-full" />
+                <div 
+                  className="h-full bg-[#B89C72] rounded-full transition-all duration-700" 
+                  style={{ width: `${progress}%` }}
+                />
               </div>
             </div>
 
@@ -114,7 +163,7 @@ export default function DashboardvOverview() {
           </div>
 
           {/* Right: Book Pedestal Illustration */}
-          <div className="w-48 h-48 relative flex-shrink-0 flex items-center justify-center">
+          <div className="w-48 h-48 relative flex-shrink-0 flex items-center justify-center bg-gray-50/50 rounded-2xl border border-dashed border-[#FAF7F2]">
             <Image
               src={bookPedestal}
               alt="Book Pedestal Illustration"
@@ -133,14 +182,14 @@ export default function DashboardvOverview() {
               <Award className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="font-serif text-[#B89C72] text-2xl font-bold tracking-wide">
-                Rockstar
+              <h3 className="font-serif text-[#B89C72] text-2xl font-bold tracking-wide capitalize">
+                {myPackage?.package_name || "Legend"}
               </h3>
               <p className="text-gray-300 text-xs font-semibold mt-1">
                 Professional Publishing Package
               </p>
               <p className="text-[#B89C72]/85 text-[10px] font-bold uppercase tracking-wider mt-2.5">
-                Purchased On May 20, 2025
+                Purchased On {formattedDate}
               </p>
             </div>
           </div>
@@ -160,10 +209,10 @@ export default function DashboardvOverview() {
       <div className="bg-white rounded-2xl border border-[#EBE5D6] shadow-sm p-6 sm:p-8 space-y-6">
         <div>
           <h2 className="font-serif text-xl sm:text-2xl font-bold text-[#0B132B]">
-            Let&apos;s Publish Your Book
+            Publishing Timeline
           </h2>
           <p className="text-xs text-gray-400 mt-1">
-            You&apos;re just a few steps away from seeing your book published and available worldwide.
+            See the steps remaining until your book goes live worldwide.
           </p>
         </div>
 
@@ -172,34 +221,36 @@ export default function DashboardvOverview() {
           <div className="absolute top-[28px] left-[5%] right-[5%] h-0.5 bg-[#FAF7F2] -z-0" />
           <div
             className="absolute top-[28px] left-[5%] h-0.5 bg-[#B89C72] transition-all duration-500 -z-0"
-            style={{ width: "25%" }} // Active through Step 2 (Review)
+            style={{ width: `${Math.min(100, Math.max(0, currentStepIndex * 25))}%` }}
           />
 
           {[
-            { num: 1, label: "Submitted", icon: CheckCircle2, completed: true, active: false },
-            { num: 2, label: "Review", icon: Compass, completed: true, active: false },
-            { num: 3, label: "Editing", icon: Edit, completed: false, active: true },
-            { num: 4, label: "Formatting", icon: FileSpreadsheet, completed: false, active: false },
-            { num: 5, label: "Publishing", icon: Rocket, completed: false, active: false },
-          ].map((step) => {
+            { num: 1, label: "Submitted", icon: CheckCircle2 },
+            { num: 2, label: "Review", icon: Compass },
+            { num: 3, label: "Editing", icon: Edit },
+            { num: 4, label: "Formatting", icon: FileSpreadsheet },
+            { num: 5, label: "Publishing", icon: Rocket },
+          ].map((step, idx) => {
             const Icon = step.icon;
+            const completed = idx < currentStepIndex;
+            const active = idx === currentStepIndex;
 
             return (
               <div key={step.num} className="flex flex-col items-center relative z-10 flex-1">
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                    step.completed
+                    completed
                       ? "bg-[#B89C72] border-[#B89C72] text-white"
-                      : step.active
+                      : active
                       ? "bg-white border-[#B89C72] text-[#B89C72] shadow-[0_0_0_4px_rgba(184,156,114,0.25)]"
                       : "bg-white border-[#D8CCBA] text-gray-400"
                   }`}
                 >
-                  {step.completed ? <Check className="w-4 h-4 stroke-[3]" /> : <Icon className="w-4.5 h-4.5" />}
+                  {completed ? <Check className="w-4 h-4 stroke-[3]" /> : <Icon className="w-4.5 h-4.5" />}
                 </div>
                 <span
                   className={`text-[10px] sm:text-xs font-bold mt-2 text-center transition-colors ${
-                    step.completed || step.active ? "text-[#B89C72]" : "text-gray-400"
+                    completed || active ? "text-[#B89C72]" : "text-gray-400"
                   }`}
                 >
                   {step.label}
@@ -209,24 +260,26 @@ export default function DashboardvOverview() {
           })}
         </div>
 
-        {/* Warning Alert Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-[#FFFBF7] border border-[#F5EFE4] rounded-2xl p-5 gap-4 shadow-sm">
-          <div className="flex items-start gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#FFF5E6] border border-[#FFE0B2] flex items-center justify-center flex-shrink-0 text-[#B89C72]">
-              <AlertTriangle className="w-5 h-5" />
+        {/* Warning Alert Banner (only show if no books submitted) */}
+        {!hasBooks && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-[#FFFBF7] border border-[#F5EFE4] rounded-2xl p-5 gap-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-[#FFF5E6] border border-[#FFE0B2] flex items-center justify-center flex-shrink-0 text-[#B89C72]">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-[#0B132B]">You Haven&apos;t Submitted Your Book Yet.</p>
+                <p className="text-xs text-gray-500 mt-0.5 font-medium">Submit your manuscript to get started on your publishing journey</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-bold text-[#0B132B]">You Haven&apos;t Submitted Your Book Yet.</p>
-              <p className="text-xs text-gray-500 mt-0.5 font-medium">Submit your manuscript to get started on your publishing journey</p>
-            </div>
+            <Link
+              href="/dashboard/submit-book"
+              className="bg-[#B89C72] hover:bg-[#9a7e55] text-white font-bold text-xs px-6 py-3.5 rounded-xl shadow-sm transition-all duration-300 hover:-translate-y-0.5 text-center flex-shrink-0 cursor-pointer"
+            >
+              Submit Your Book
+            </Link>
           </div>
-          <Link
-            href="/dashboard/submit-book"
-            className="bg-[#B89C72] hover:bg-[#9a7e55] text-white font-bold text-xs px-6 py-3.5 rounded-xl shadow-sm transition-all duration-300 hover:-translate-y-0.5 text-center flex-shrink-0 cursor-pointer"
-          >
-            Submit Your Book
-          </Link>
-        </div>
+        )}
       </div>
 
       {/* ── Row 3: Notifications & Support Card ──────────────────── */}
@@ -239,24 +292,30 @@ export default function DashboardvOverview() {
             </h2>
 
             <div className="divide-y divide-[#FAF7F2]">
-              {NOTIFICATIONS.map((notif) => (
-                <div key={notif.id} className="flex items-start py-3.5 first:pt-0 last:pb-0 gap-3">
-                  <div className="w-8.5 h-8.5 rounded-lg bg-[#EDE7F6]/60 border border-[#D1C4E9]/40 flex items-center justify-center flex-shrink-0 text-[#673AB7]">
-                    <FileText className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-xs font-bold text-[#0B132B] truncate leading-tight">
-                      {notif.title}
-                    </h3>
-                    <p className="text-[10px] text-gray-400 font-medium truncate mt-0.5">
-                      {notif.desc}
-                    </p>
-                    <span className="text-[9px] text-gray-400 font-semibold mt-1 inline-block">
-                      {notif.time}
-                    </span>
-                  </div>
+              {notificationsFeed.length === 0 ? (
+                <div className="text-center py-8 text-gray-400 text-xs">
+                  No notifications yet.
                 </div>
-              ))}
+              ) : (
+                notificationsFeed.map((notif) => (
+                  <div key={notif.id} className="flex items-start py-3.5 first:pt-0 last:pb-0 gap-3">
+                    <div className="w-8.5 h-8.5 rounded-lg bg-[#EDE7F6]/60 border border-[#D1C4E9]/40 flex items-center justify-center flex-shrink-0 text-[#673AB7]">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-xs font-bold text-[#0B132B] truncate leading-tight">
+                        {notif.title}
+                      </h3>
+                      <p className="text-[10px] text-gray-400 font-medium truncate mt-0.5">
+                        {notif.message}
+                      </p>
+                      <span className="text-[9px] text-gray-400 font-semibold mt-1 inline-block">
+                        {formatTimeAgo(notif.created_at)}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

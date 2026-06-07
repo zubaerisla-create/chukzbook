@@ -2,15 +2,60 @@
 
 import React, { useState } from "react";
 import contactBg from "@/assets/images/contact-us.png";
+import { useCaptureLeadMutation } from "@/redux/api/authApi";
 
 const Contact = () => {
+  const [captureLead, { isLoading }] = useCaptureLeadMutation();
+
+  // Form states
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
+  
+  // Alert states
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+
   const charLimit = 600;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSuccess(false);
+
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !phone.trim() || !message.trim()) {
+      setError("Please fill out all fields.");
+      return;
+    }
+
+    try {
+      await captureLead({
+        first_name: firstName,
+        last_name: lastName,
+        email: email.trim(),
+        phone: phone.trim(),
+        user_message: message.trim(),
+      }).unwrap();
+
+      setSuccess(true);
+      // Reset form fields
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setPhone("");
+      setMessage("");
+    } catch (err: any) {
+      console.error("Message capture failed:", err);
+      setError(err.data?.detail || err.message || "Failed to send message. Please try again.");
+    }
+  };
 
   return (
     <section
       id="contact"
-      className="py-24 relative overflow-hidden bg-cover bg-center bg-no-repeat"
+      className="py-24 relative overflow-hidden bg-cover bg-center bg-no-repeat font-sans"
       style={{ backgroundImage: `url(${contactBg.src})` }}
     >
       {/* Light overlay to blend the background graphics cleanly */}
@@ -134,8 +179,20 @@ const Contact = () => {
                 </p>
               </div>
 
+              {/* Alert Notifications */}
+              {success && (
+                <div className="mb-5 p-4 bg-green-50 text-green-600 border border-green-200 rounded-xl text-xs font-bold text-center leading-relaxed">
+                  ✓ Message sent successfully! We will get in touch with you shortly.
+                </div>
+              )}
+              {error && (
+                <div className="mb-5 p-4 bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs font-bold text-center leading-relaxed">
+                  {error}
+                </div>
+              )}
+
               {/* Form Inputs Grid */}
-              <form onSubmit={(e) => e.preventDefault()} className="space-y-5">
+              <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   {/* First Name */}
                   <div className="relative">
@@ -147,7 +204,11 @@ const Contact = () => {
                     <input
                       type="text"
                       placeholder="First Name"
-                      className="w-full pl-12 pr-4 py-3.5 bg-[#FAF8F5] border border-[#e8dfc8]/60 rounded-xl text-[#0c1424] text-sm placeholder-gray-400 focus:outline-none focus:border-[#B89C72] transition-colors"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      disabled={isLoading}
+                      required
+                      className="w-full pl-12 pr-4 py-3.5 bg-[#FAF8F5] border border-[#e8dfc8]/60 rounded-xl text-[#0c1424] text-sm placeholder-gray-400 focus:outline-none focus:border-[#B89C72] transition-colors disabled:opacity-60"
                     />
                   </div>
 
@@ -161,7 +222,11 @@ const Contact = () => {
                     <input
                       type="text"
                       placeholder="Last Name"
-                      className="w-full pl-12 pr-4 py-3.5 bg-[#FAF8F5] border border-[#e8dfc8]/60 rounded-xl text-[#0c1424] text-sm placeholder-gray-400 focus:outline-none focus:border-[#B89C72] transition-colors"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      disabled={isLoading}
+                      required
+                      className="w-full pl-12 pr-4 py-3.5 bg-[#FAF8F5] border border-[#e8dfc8]/60 rounded-xl text-[#0c1424] text-sm placeholder-gray-400 focus:outline-none focus:border-[#B89C72] transition-colors disabled:opacity-60"
                     />
                   </div>
                 </div>
@@ -177,7 +242,11 @@ const Contact = () => {
                     <input
                       type="email"
                       placeholder="Email"
-                      className="w-full pl-12 pr-4 py-3.5 bg-[#FAF8F5] border border-[#e8dfc8]/60 rounded-xl text-[#0c1424] text-sm placeholder-gray-400 focus:outline-none focus:border-[#B89C72] transition-colors"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={isLoading}
+                      required
+                      className="w-full pl-12 pr-4 py-3.5 bg-[#FAF8F5] border border-[#e8dfc8]/60 rounded-xl text-[#0c1424] text-sm placeholder-gray-400 focus:outline-none focus:border-[#B89C72] transition-colors disabled:opacity-60"
                     />
                   </div>
 
@@ -191,7 +260,11 @@ const Contact = () => {
                     <input
                       type="tel"
                       placeholder="Phone"
-                      className="w-full pl-12 pr-4 py-3.5 bg-[#FAF8F5] border border-[#e8dfc8]/60 rounded-xl text-[#0c1424] text-sm placeholder-gray-400 focus:outline-none focus:border-[#B89C72] transition-colors"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      disabled={isLoading}
+                      required
+                      className="w-full pl-12 pr-4 py-3.5 bg-[#FAF8F5] border border-[#e8dfc8]/60 rounded-xl text-[#0c1424] text-sm placeholder-gray-400 focus:outline-none focus:border-[#B89C72] transition-colors disabled:opacity-60"
                     />
                   </div>
                 </div>
@@ -208,20 +281,30 @@ const Contact = () => {
                     placeholder="Have A Question For Us ? Ask Away"
                     value={message}
                     onChange={(e) => setMessage(e.target.value.slice(0, charLimit))}
-                    className="w-full pl-12 pr-4 py-3.5 bg-[#FAF8F5] border border-[#e8dfc8]/60 rounded-xl text-[#0c1424] text-sm placeholder-gray-400 focus:outline-none focus:border-[#B89C72] transition-colors resize-none"
+                    disabled={isLoading}
+                    required
+                    className="w-full pl-12 pr-4 py-3.5 bg-[#FAF8F5] border border-[#e8dfc8]/60 rounded-xl text-[#0c1424] text-sm placeholder-gray-400 focus:outline-none focus:border-[#B89C72] transition-colors resize-none disabled:opacity-60"
                   />
                   {/* Counter */}
                   <div className="text-[10px] text-gray-400 text-right font-medium mt-1 pr-1">
-                    {message.length}of {charLimit} Max Characters
+                    {message.length} of {charLimit} Max Characters
                   </div>
                 </div>
 
                 {/* Send Button */}
                 <button
                   type="submit"
-                  className="w-full py-4 bg-[#0B132B] hover:bg-[#16213F] text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all duration-300 shadow-md hover:shadow-lg"
+                  disabled={isLoading}
+                  className="w-full py-4 bg-[#0B132B] hover:bg-[#16213F] text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all duration-300 shadow-md hover:shadow-lg disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
                 >
-                  Send Message
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Sending Message...
+                    </>
+                  ) : (
+                    "Send Message"
+                  )}
                 </button>
               </form>
 

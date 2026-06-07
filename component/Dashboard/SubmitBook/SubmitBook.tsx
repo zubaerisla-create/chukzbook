@@ -19,19 +19,30 @@ import {
   ArrowLeft,
   Calendar,
 } from "lucide-react";
+import { useCreateBookMutation, useGetPresignedUrlMutation } from "@/redux/api/authApi";
 
 interface UploadedFile {
   id: string;
   name: string;
   size: string;
   type: "pdf" | "docx" | "image";
+  rawFile: File;
 }
 
 export default function SubmitBook() {
+  const [createBook] = useCreateBookMutation();
+  const [getPresignedUrl] = useGetPresignedUrlMutation();
+
   const [currentStep, setCurrentStep] = useState(1);
   const [confirmed, setConfirmed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submissionId, setSubmissionId] = useState("");
+  const [submissionDate, setSubmissionDate] = useState("");
+  const [submitError, setSubmitError] = useState("");
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const [replacingFileId, setReplacingFileId] = useState<string | null>(null);
 
   // Form state pre-populated to match screenshots
@@ -46,15 +57,23 @@ export default function SubmitBook() {
     keywords: "Leadership, Success, Business, Growth",
   });
 
-  // Files state pre-populated to match screenshots
-  const [files, setFiles] = useState<UploadedFile[]>([
-    { id: "1", name: "The Leads Blueprint.Docx", size: "2.8 MB", type: "docx" },
-    { id: "2", name: "Cover Image", size: "2.8 MB", type: "image" },
-    { id: "3", name: "Dfvdgvdvdgv", size: "2.8 MB", type: "pdf" },
-  ]);
+  // Start with empty files list for manuscripts
+  const [files, setFiles] = useState<UploadedFile[]>([]);
+  const [coverImage, setCoverImage] = useState<UploadedFile | null>(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
 
   // Handle file drops
   const [dragging, setDragging] = useState(false);
+  const [coverDragging, setCoverDragging] = useState(false);
+
+  // Clean up object URLs when coverImage changes or component unmounts
+  React.useEffect(() => {
+    return () => {
+      if (coverPreviewUrl) {
+        URL.revokeObjectURL(coverPreviewUrl);
+      }
+    };
+  }, [coverPreviewUrl]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -78,17 +97,26 @@ export default function SubmitBook() {
   };
 
   const addFilesToList = (fileList: File[]) => {
-    const newFiles: UploadedFile[] = fileList.map((f, idx) => {
+    const validFiles = fileList.filter((f) => {
+      const ext = f.name.split(".").pop()?.toLowerCase();
+      const isValid = ext && ["pdf", "doc", "docx"].includes(ext);
+      if (!isValid) {
+        alert(`File "${f.name}" is not a valid manuscript. Only PDF, DOC, and DOCX are allowed.`);
+      }
+      return isValid;
+    });
+
+    const newFiles: UploadedFile[] = validFiles.map((f, idx) => {
       const ext = f.name.split(".").pop()?.toLowerCase();
       let type: "pdf" | "docx" | "image" = "docx";
       if (ext === "pdf") type = "pdf";
-      else if (ext && ["png", "jpg", "jpeg", "webp"].includes(ext)) type = "image";
 
       return {
-        id: Date.now().toString() + idx,
+        id: (Date.now() + idx).toString(),
         name: f.name,
         size: (f.size / (1024 * 1024)).toFixed(1) + " MB",
         type,
+        rawFile: f
       };
     });
     setFiles((prev) => [...prev, ...newFiles]);
@@ -107,9 +135,14 @@ export default function SubmitBook() {
     const selected = e.target.files?.[0];
     if (selected && replacingFileId) {
       const ext = selected.name.split(".").pop()?.toLowerCase();
+      const isValid = ext && ["pdf", "doc", "docx"].includes(ext);
+      if (!isValid) {
+        alert(`File "${selected.name}" is not a valid manuscript. Only PDF, DOC, and DOCX are allowed.`);
+        setReplacingFileId(null);
+        return;
+      }
       let type: "pdf" | "docx" | "image" = "docx";
       if (ext === "pdf") type = "pdf";
-      else if (ext && ["png", "jpg", "jpeg", "webp"].includes(ext)) type = "image";
 
       setFiles((prev) =>
         prev.map((f) =>
@@ -119,6 +152,7 @@ export default function SubmitBook() {
                 name: selected.name,
                 size: (selected.size / (1024 * 1024)).toFixed(1) + " MB",
                 type,
+                rawFile: selected
               }
             : f
         )
@@ -127,13 +161,232 @@ export default function SubmitBook() {
     setReplacingFileId(null);
   };
 
+  // Cover image handlers
+  const handleCoverDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setCoverDragging(true);
+  };
+
+  const handleCoverDragLeave = () => {
+    setCoverDragging(false);
+  };
+
+  const handleCoverDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setCoverDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      addCoverFile(file);
+    }
+  };
+
+  const handleCoverSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      addCoverFile(file);
+    }
+  };
+
+  const addCoverFile = (file: File) => {
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (!ext || !["png", "jpg", "jpeg", "webp"].includes(ext)) {
+      alert("Please upload a valid image file (PNG, JPG, or WEBP) for the cover.");
+      return;
+    }
+
+    if (coverPreviewUrl) {
+      URL.revokeObjectURL(coverPreviewUrl);
+    }
+
+    const preview = URL.createObjectURL(file);
+    setCoverPreviewUrl(preview);
+    setCoverImage({
+      id: "cover-" + Date.now(),
+      name: file.name,
+      size: (file.size / (1024 * 1024)).toFixed(1) + " MB",
+      type: "image",
+      rawFile: file,
+    });
+  };
+
+  const handleRemoveCover = () => {
+    if (coverPreviewUrl) {
+      URL.revokeObjectURL(coverPreviewUrl);
+      setCoverPreviewUrl(null);
+    }
+    setCoverImage(null);
+  };
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    setSubmitError("");
+    try {
+      let coverImageUrl = "";
+      const manuscriptUrls: string[] = [];
+
+      // 1. Upload Cover Image if present
+      if (coverImage) {
+        try {
+          const response = await getPresignedUrl({
+            file_name: coverImage.name,
+            content_type: coverImage.rawFile.type,
+            folder: "covers",
+          }).unwrap();
+
+          console.log("Cover Presigned URL response:", response);
+          const uploadUrl = response.url || (response as any).presigned_url || (response as any).upload_url;
+          if (!uploadUrl) {
+            throw new Error("No upload URL returned from presigned-url endpoint");
+          }
+
+          let finalUrl = response.public_url || uploadUrl.split("?")[0];
+          const fields = response.fields;
+
+          // Perform raw file upload
+          if (fields) {
+            const bodyFormData = new FormData();
+            Object.entries(fields).forEach(([k, v]) => {
+              bodyFormData.append(k, v);
+            });
+            bodyFormData.append("file", coverImage.rawFile);
+            await fetch(uploadUrl, {
+              method: "POST",
+              body: bodyFormData,
+            });
+          } else {
+            await fetch(uploadUrl, {
+              method: "PUT",
+              body: coverImage.rawFile,
+              headers: {
+                "Content-Type": coverImage.rawFile.type,
+              },
+            });
+          }
+          coverImageUrl = finalUrl;
+        } catch (uploadError: any) {
+          const isCors = uploadError?.message?.toLowerCase().includes("fetch") ||
+                         uploadError?.message?.toLowerCase().includes("cors") ||
+                         uploadError?.name === "TypeError";
+          throw new Error(
+            isCors
+              ? "Cover image upload failed: the storage bucket is blocking browser uploads (CORS not configured). Please ask your admin to add CORS rules to the R2 bucket, then try again."
+              : `Cover image upload failed: ${uploadError?.message || "Unknown error"}`
+          );
+        }
+      }
+
+      // 2. Upload manuscript files to storage
+      for (const file of files) {
+        try {
+          const response = await getPresignedUrl({
+            file_name: file.name,
+            content_type: file.rawFile.type,
+            folder: "manuscripts",
+          }).unwrap();
+
+          console.log("Manuscript Presigned URL response:", response);
+          const uploadUrl = response.url || (response as any).presigned_url || (response as any).upload_url;
+          if (!uploadUrl) {
+            throw new Error("No upload URL returned from presigned-url endpoint");
+          }
+
+          let finalUrl = response.public_url || uploadUrl.split("?")[0];
+          const fields = response.fields;
+
+          // Perform raw file upload
+          if (fields) {
+            const bodyFormData = new FormData();
+            Object.entries(fields).forEach(([k, v]) => {
+              bodyFormData.append(k, v);
+            });
+            bodyFormData.append("file", file.rawFile);
+            await fetch(uploadUrl, {
+              method: "POST",
+              body: bodyFormData,
+            });
+          } else {
+            await fetch(uploadUrl, {
+              method: "PUT",
+              body: file.rawFile,
+              headers: {
+                "Content-Type": file.rawFile.type,
+              },
+            });
+          }
+          manuscriptUrls.push(finalUrl);
+        } catch (uploadError: any) {
+          const isCors = uploadError?.message?.toLowerCase().includes("fetch") ||
+                         uploadError?.message?.toLowerCase().includes("cors") ||
+                         uploadError?.name === "TypeError";
+          throw new Error(
+            isCors
+              ? `Manuscript upload failed for "${file.name}": the storage bucket is blocking browser uploads (CORS not configured). Please ask your admin to add CORS rules to the R2 bucket, then try again.`
+              : `Manuscript upload failed for "${file.name}": ${uploadError?.message || "Unknown error"}`
+          );
+        }
+      }
+
+      // 3. Submit the book to backend
+      const wordCountNum = parseInt(formData.wordCount) || 0;
+      const estimatedPages = Math.max(1, Math.round(wordCountNum / 250)) || 100;
+
+      const result = await createBook({
+        title: formData.title,
+        subtitle: formData.subtitle,
+        genre: formData.genre,
+        language: formData.language,
+        words: wordCountNum,
+        pages: estimatedPages,
+        target_audience: formData.targetAudience,
+        description: formData.description,
+        keywords: formData.keywords,
+        manuscript_urls: manuscriptUrls.join(","),
+        cover_image_url: coverImageUrl || undefined,
+      }).unwrap();
+
+      setSubmissionId(`HP-${new Date().getFullYear()}-${String(result.id).padStart(5, "0")}`);
+      setSubmissionDate(new Date().toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true
+      }));
+
+      // Go to success
+      setCurrentStep(4);
+    } catch (err: any) {
+      console.error("Failed to submit book:", err);
+      setSubmitError(err?.message || "Submission failed. Please check your connection and try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleReset = () => {
+    setFormData({
+      title: "",
+      subtitle: "",
+      genre: "",
+      language: "English",
+      wordCount: "",
+      targetAudience: "Adult(18+)",
+      description: "",
+      keywords: "",
+    });
+    setFiles([]);
+    if (coverPreviewUrl) {
+      URL.revokeObjectURL(coverPreviewUrl);
+      setCoverPreviewUrl(null);
+    }
+    setCoverImage(null);
     setCurrentStep(1);
     setConfirmed(false);
   };
 
   return (
-    <div className="space-y-6 max-w-9xl mx-auto py-2">
+    <div className="space-y-6 max-w-9xl mx-auto py-2 font-sans">
       {/* Hidden inputs for file operations */}
       <input
         ref={fileInputRef}
@@ -147,6 +400,13 @@ export default function SubmitBook() {
         type="file"
         className="hidden"
         onChange={handleReplaceFileChange}
+      />
+      <input
+        ref={coverInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        className="hidden"
+        onChange={handleCoverSelect}
       />
 
       {/* BANNER & STEPPER (hidden in step 4 - Success) */}
@@ -298,12 +558,12 @@ export default function SubmitBook() {
 
             {/* Word Count */}
             <div>
-              <label className="text-sm font-bold text-[#0B132B] mb-2 block">Word</label>
+              <label className="text-sm font-bold text-[#0B132B] mb-2 block">Word Count</label>
               <input
-                type="text"
+                type="number"
                 value={formData.wordCount}
                 onChange={(e) => setFormData({ ...formData, wordCount: e.target.value })}
-                placeholder="E.G. 800000"
+                placeholder="E.G. 80000"
                 className="w-full text-sm bg-[#FAF7F2] border border-[#EBE5D6] rounded-xl px-4 py-3 text-[#0B132B] focus:outline-none focus:border-[#B89C72]"
               />
             </div>
@@ -332,7 +592,7 @@ export default function SubmitBook() {
                 rows={4}
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe your book in a few sentence"
+                placeholder="Describe your book in a few sentences"
                 className="w-full text-sm bg-[#FAF7F2] border border-[#EBE5D6] rounded-xl px-4 py-3 text-[#0B132B] focus:outline-none focus:border-[#B89C72] resize-none"
               />
             </div>
@@ -346,7 +606,7 @@ export default function SubmitBook() {
                 type="text"
                 value={formData.keywords}
                 onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
-                placeholder="E.G. leadership, success, motivations"
+                placeholder="E.G. leadership, success, motivation"
                 className="w-full text-sm bg-[#FAF7F2] border border-[#EBE5D6] rounded-xl px-4 py-3 text-[#0B132B] focus:outline-none focus:border-[#B89C72]"
               />
             </div>
@@ -413,7 +673,7 @@ export default function SubmitBook() {
           {/* Selected Files List */}
           {files.length > 0 && (
             <div className="space-y-4">
-              <h3 className="text-sm font-bold text-[#0B132B] border-b border-[#FAF7F2] pb-2">Selected File</h3>
+              <h3 className="text-sm font-bold text-[#0B132B] border-b border-[#FAF7F2] pb-2">Selected Files</h3>
               <div className="space-y-3">
                 {files.map((file) => (
                   <div
@@ -450,6 +710,79 @@ export default function SubmitBook() {
               </div>
             </div>
           )}
+
+          {/* ── Cover Image Upload ── */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-[#FAF5EE] border border-[#EBE5D6] flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-[#B89C72]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#0B132B]">Book Cover Image</h3>
+                <p className="text-[10px] text-gray-400">Optional — PNG, JPG, or WEBP up to 5 MB</p>
+              </div>
+            </div>
+
+            {/* Cover preview or upload zone */}
+            {coverImage && coverPreviewUrl ? (
+              <div className="flex items-center gap-5 p-4 bg-[#FAF8F5] border border-[#EBE5D6] rounded-2xl shadow-sm">
+                {/* Thumbnail */}
+                <div className="w-20 h-28 rounded-xl overflow-hidden border border-[#EBE5D6] flex-shrink-0 shadow-sm bg-white">
+                  <img
+                    src={coverPreviewUrl}
+                    alt="Cover preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-[#0B132B] truncate">{coverImage.name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{coverImage.size}</p>
+                  <div className="flex items-center gap-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => coverInputRef.current?.click()}
+                      className="flex items-center gap-1.5 text-xs font-bold border border-[#EBE5D6] text-gray-600 bg-white hover:border-[#B89C72] hover:text-[#B89C72] px-3 py-2 rounded-xl transition-all cursor-pointer shadow-sm"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" /> Replace
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveCover}
+                      className="flex items-center gap-1.5 text-xs font-bold border border-red-100 text-red-500 bg-white hover:bg-red-50 px-3 py-2 rounded-xl transition-all cursor-pointer shadow-sm"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Remove
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div
+                onDragOver={handleCoverDragOver}
+                onDragLeave={handleCoverDragLeave}
+                onDrop={handleCoverDrop}
+                onClick={() => coverInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-2xl flex flex-col items-center justify-center py-10 px-6 transition-all duration-300 cursor-pointer ${
+                  coverDragging
+                    ? "border-[#B89C72] bg-[#FAF5EE] scale-[0.99]"
+                    : "border-[#EBE5D6] bg-[#FAF8F5] hover:border-[#B89C72] hover:bg-[#FAF5EE]"
+                }`}
+              >
+                <div className="w-12 h-12 rounded-full bg-[#FAF5EE] border border-[#EBE5D6] flex items-center justify-center mb-3">
+                  <svg className="w-5 h-5 text-[#B89C72]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                  </svg>
+                </div>
+                <p className="font-bold text-[#0B132B] text-sm mb-1 text-center">Upload Book Cover</p>
+                <p className="text-gray-400 text-xs mb-3">Drag & drop or click to browse</p>
+                <span className="bg-[#B89C72] hover:bg-[#9a7e55] text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-sm transition-all">
+                  Choose Image
+                </span>
+                <p className="text-[10px] text-gray-400 mt-3">PNG, JPG, WEBP · Max 5 MB · Recommended 1600×2400px</p>
+              </div>
+            )}
+          </div>
 
           {/* Action buttons */}
           <div className="pt-4 flex flex-col sm:flex-row items-center gap-3 justify-between">
@@ -497,6 +830,7 @@ export default function SubmitBook() {
                 <h3 className="text-base font-bold text-[#0B132B]">Book Information</h3>
               </div>
               <button
+                disabled={submitting}
                 onClick={() => setCurrentStep(1)}
                 className="flex items-center gap-1.5 text-xs font-bold text-[#B89C72] border border-[#B89C72]/30 rounded-xl px-3.5 py-2 hover:bg-[#B89C72]/10 transition-colors cursor-pointer"
               >
@@ -535,11 +869,45 @@ export default function SubmitBook() {
             </div>
           </div>
 
-          {/* Section 2: Manuscript Details */}
+          {/* Section 2: Cover Image */}
           <div className="space-y-4">
             <div className="flex items-center gap-2.5 border-b border-[#FAF7F2] pb-2">
               <span className="w-6 h-6 rounded-full bg-[#FAF5EE] text-[#B89C72] font-bold text-xs flex items-center justify-center border border-[#EBE5D6]">
                 2
+              </span>
+              <h3 className="text-base font-bold text-[#0B132B]">Book Cover Image</h3>
+            </div>
+
+            {coverImage && coverPreviewUrl ? (
+              <div className="flex items-center gap-5 p-4 bg-[#FAF8F5] border border-[#EBE5D6] rounded-2xl shadow-sm">
+                <div className="w-16 h-24 rounded-xl overflow-hidden border border-[#EBE5D6] flex-shrink-0 shadow-sm bg-white">
+                  <img src={coverPreviewUrl} alt="Cover preview" className="w-full h-full object-cover" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-[#0B132B] truncate max-w-xs">{coverImage.name}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{coverImage.size}</p>
+                  <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold text-green-700 bg-green-50 border border-green-100 rounded-full px-2.5 py-0.5">
+                    <Check className="w-3 h-3" /> Cover uploaded
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 p-4 bg-[#FAF8F5] border border-dashed border-[#EBE5D6] rounded-2xl">
+                <div className="w-10 h-10 rounded-xl bg-white border border-[#EBE5D6] flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m2.25 15.75 5.159-5.159a2.25 2.25 0 0 1 3.182 0l5.159 5.159m-1.5-1.5 1.409-1.409a2.25 2.25 0 0 1 3.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5H3.75A1.5 1.5 0 0 0 2.25 6v12a1.5 1.5 0 0 0 1.5 1.5Zm10.5-11.25h.008v.008h-.008V8.25Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                  </svg>
+                </div>
+                <p className="text-sm text-gray-400 italic">No cover image uploaded <span className="text-[10px] font-bold text-[#B89C72] not-italic">(Optional)</span></p>
+              </div>
+            )}
+          </div>
+
+          {/* Section 3: Manuscript Details */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2.5 border-b border-[#FAF7F2] pb-2">
+              <span className="w-6 h-6 rounded-full bg-[#FAF5EE] text-[#B89C72] font-bold text-xs flex items-center justify-center border border-[#EBE5D6]">
+                3
               </span>
               <h3 className="text-base font-bold text-[#0B132B]">Manuscript Details</h3>
             </div>
@@ -563,12 +931,14 @@ export default function SubmitBook() {
                   </div>
                   <div className="flex items-center gap-2 self-end sm:self-center">
                     <button
+                      disabled={submitting}
                       onClick={() => triggerReplace(file.id)}
                       className="flex items-center gap-1.5 text-xs font-bold border border-[#EBE5D6] text-gray-600 bg-white hover:border-[#B89C72] hover:text-[#B89C72] px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-sm"
                     >
                       <RefreshCw className="w-3.5 h-3.5" /> Replace File
                     </button>
                     <button
+                      disabled={submitting}
                       onClick={() => handleRemoveFile(file.id)}
                       className="flex items-center gap-1.5 text-xs font-bold border border-red-100 text-red-500 bg-white hover:bg-red-50 px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-sm"
                     >
@@ -580,10 +950,23 @@ export default function SubmitBook() {
             </div>
           </div>
 
+          {submitError && (
+            <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl flex items-start gap-3 text-sm font-medium">
+              <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center text-red-800 flex-shrink-0 mt-0.5 font-bold">
+                ⚠️
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-red-800 mb-0.5">Upload/Submission Failed</p>
+                <p className="text-xs text-red-700 leading-relaxed">{submitError}</p>
+              </div>
+            </div>
+          )}
+
           {/* Declaration check box */}
           <div className="flex items-start gap-3 bg-[#FFFDF9] border border-[#F5EFE4] rounded-2xl p-5 shadow-sm">
             <div className="relative flex items-center mt-0.5">
               <input
+                disabled={submitting}
                 type="checkbox"
                 id="confirm-rights"
                 checked={confirmed}
@@ -595,28 +978,38 @@ export default function SubmitBook() {
               )}
             </div>
             <label htmlFor="confirm-rights" className="text-xs text-gray-600 leading-relaxed cursor-pointer select-none font-medium">
-              I confirm that all information provided is accurate and that I own the rights to this manuscript. I understand that harmony publishing will begin the publishing process after submission.
+              I confirm that all information provided is accurate and that I own the rights to this manuscript. I understand that Harmony Publishing will begin the publishing process after submission.
             </label>
           </div>
 
           {/* Action buttons */}
           <div className="pt-4 flex flex-col sm:flex-row items-center gap-3 justify-between">
             <button
+              disabled={submitting}
               onClick={() => setCurrentStep(2)}
               className="w-full sm:w-auto flex items-center justify-center gap-2 font-bold text-sm px-8 py-3.5 rounded-xl border border-[#EBE5D6] text-gray-600 hover:border-[#B89C72] hover:text-[#B89C72] hover:bg-[#FAF7F2] transition-all cursor-pointer"
             >
               <ArrowLeft className="w-4 h-4" /> Back
             </button>
             <button
-              onClick={() => setCurrentStep(4)}
-              disabled={!confirmed}
+              onClick={handleSubmit}
+              disabled={!confirmed || submitting}
               className={`w-full sm:w-auto flex items-center justify-center gap-2 font-bold text-sm px-8 py-3.5 rounded-xl transition-all duration-300 ${
-                confirmed
+                confirmed && !submitting
                   ? "bg-[#B89C72] hover:bg-[#9a7e55] text-white shadow-sm hover:shadow-[0_4px_16px_rgba(184,156,114,0.35)] hover:-translate-y-0.5 cursor-pointer"
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
               }`}
             >
-              Submit My Book <ArrowRight className="w-4 h-4" />
+              {submitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  Submit My Book <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -631,7 +1024,6 @@ export default function SubmitBook() {
           <div className="absolute bottom-16 left-16 opacity-25 select-none text-4xl -rotate-12">🌿</div>
           <div className="absolute bottom-12 right-24 opacity-30 select-none text-2xl">🍎</div>
           
-          {/* Custom SVG elements for extra background flair */}
           <svg className="absolute -left-10 top-1/4 w-32 h-32 text-[#B89C72]/10" viewBox="0 0 100 100">
             <circle cx="50" cy="50" r="40" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="5 5" />
           </svg>
@@ -657,7 +1049,7 @@ export default function SubmitBook() {
               </div>
               <div className="text-left">
                 <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Submission Id</p>
-                <p className="text-xs font-bold text-green-800">Hp 2025-00125</p>
+                <p className="text-xs font-bold text-green-800">{submissionId}</p>
               </div>
             </div>
             <div className="w-px h-8 bg-green-200 hidden sm:block" />
@@ -667,14 +1059,13 @@ export default function SubmitBook() {
               </div>
               <div className="text-left">
                 <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Submission On</p>
-                <p className="text-xs font-bold text-green-800">May 20, 2025 At 10:30 Am</p>
+                <p className="text-xs font-bold text-green-800">{submissionDate}</p>
               </div>
             </div>
           </div>
 
           {/* Inkpot and Quill graphic aligned in the bottom right context */}
           <div className="relative max-w-xs mx-auto mb-6 flex justify-center items-center">
-            {/* Elegant SVG Inkpot and Quill */}
             <svg viewBox="0 0 100 100" className="w-24 h-24 text-[#B89C72]">
               {/* Inkpot base */}
               <path d="M30 75 L70 75 L65 55 L35 55 Z" fill="currentColor" opacity="0.8" />

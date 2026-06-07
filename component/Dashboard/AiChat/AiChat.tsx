@@ -7,14 +7,9 @@ import {
   Send,
   Sparkles,
   RefreshCw,
-  ArrowRight,
+  XCircle,
 } from "lucide-react";
-
-type Message = {
-  from: "user" | "assistant";
-  text: string | React.ReactNode;
-  showButton?: boolean;
-};
+import { useWebSocketChat } from "@/hooks/useWebSocketChat";
 
 const SUGGESTED = [
   "Printing Cost Estimate",
@@ -24,82 +19,36 @@ const SUGGESTED = [
 ];
 
 export default function AiChat() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
+  const {
+    messages,
+    isTyping,
+    isConnected,
+    connectionError,
+    sendMessage,
+    abortReply,
+    clearHistory,
+  } = useWebSocketChat({
+    initialMessage: {
       from: "assistant",
-      text: (
-        <>
-          <span className="text-[#B89C72] font-bold">Hi There</span>
-          <br />
-          I&apos;m Your AI Publishing Assistant.
-          <br />
-          How Can I Help You Today?
-        </>
-      ),
+      text: "Hi There\nI'm Your AI Publishing Assistant.\nHow Can I Help You Today?",
     },
-  ]);
+  });
+
   const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const getResponse = (msg: string) => {
-    const lower = msg.toLowerCase();
-    if (lower.includes("print") || lower.includes("cost") || lower.includes("200")) {
-      return {
-        text: (
-          <>
-            Based On Your Book Details, The Estimated Printing Cost For 200 Copies Is{" "}
-            <span className="text-[#B89C72] font-bold">$2,184 ($10.92 Per Book)</span>
-            <br />
-            This Includes Premium Materials, Printing, Binding, And Quality Checks. Would You
-            Like Me To Recommend The Best Package For Your Book?
-          </>
-        ),
-        showButton: true,
-      };
-    }
-    if (lower.includes("package") || lower.includes("plan")) {
-      return {
-        text: "We offer 5 publishing packages ranging from $499 (Starter) to $4,999 (Legend). The most popular is our Premium package at $1,499. Would you like details on a specific package?",
-        showButton: false,
-      };
-    }
-    if (lower.includes("timeline") || lower.includes("time") || lower.includes("long")) {
-      return {
-        text: "A typical publishing timeline usually takes 8-12 weeks, including editorial review (2-3 weeks), book cover design (2 weeks), formatting (1 week), and global distribution setup (1-2 weeks).",
-        showButton: false,
-      };
-    }
-    return {
-      text: "Thank you for your question! Our publishing team will review your book requirements and guide you shortly. You can also explore our cost estimator for instant quotes.",
-      showButton: false,
-    };
-  };
-
   const handleSend = (text?: string) => {
     const userMsg = text ?? input.trim();
     if (!userMsg) return;
 
-    setMessages((prev) => [...prev, { from: "user", text: userMsg }]);
-    setInput("");
-    setIsTyping(true);
-
-    setTimeout(() => {
-      const response = getResponse(userMsg);
-      setMessages((prev) => [
-        ...prev,
-        {
-          from: "assistant",
-          text: response.text,
-          showButton: response.showButton,
-        },
-      ]);
-      setIsTyping(false);
-    }, 1000);
+    sendMessage(userMsg);
+    if (!text) {
+      setInput("");
+    }
   };
 
   return (
@@ -122,8 +71,36 @@ export default function AiChat() {
 
       {/* Chat Widget Wrapper */}
       <div className="bg-white rounded-2xl border border-[#EBE5D6] shadow-sm overflow-hidden flex flex-col h-[650px] relative">
+        {/* Chat Widget Header with Connection Status & Reset */}
+        <div className="px-6 py-4 border-b border-[#EBE5D6] bg-white flex items-center justify-between relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-[#0B132B] flex items-center justify-center">
+              <Bot className="w-5 h-5 text-[#B89C72]" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-[#0B132B]">Harmony Publishing</p>
+              <div className="flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full ${isConnected ? "bg-green-500 animate-pulse" : "bg-orange-500 animate-pulse"}`}></span>
+                <span className="text-xs text-gray-400">{isConnected ? "Connected" : "Connecting..."}</span>
+              </div>
+            </div>
+          </div>
+          <button 
+            onClick={clearHistory}
+            title="Clear Chat History"
+            className="p-2 text-gray-400 hover:text-red-500 hover:bg-gray-100 rounded-lg transition-all cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
+
         {/* Messages List Area */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-gradient-to-b from-white to-[#FAF8F5]/10">
+          {connectionError && (
+            <div className="p-3.5 bg-red-50 border border-red-200 text-red-800 rounded-xl text-xs text-center font-semibold mb-2 relative z-20">
+              Chat is briefly unavailable — email <a href="mailto:publish@harmonypublishing.net" className="underline hover:text-[#9a7e55] font-bold">publish@harmonypublishing.net</a>
+            </div>
+          )}
           {messages.map((msg, i) => (
             <div key={i} className="space-y-4">
               <div className={`flex ${msg.from === "user" ? "justify-end" : "justify-start"}`}>
@@ -140,17 +117,6 @@ export default function AiChat() {
                   }`}
                 >
                   {msg.text}
-
-                  {msg.from === "assistant" && msg.showButton && (
-                    <div className="mt-4">
-                      <button
-                        onClick={() => handleSend("Package Recommendations")}
-                        className="bg-[#B89C72] hover:bg-[#9a7e55] text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all duration-300 shadow-sm cursor-pointer"
-                      >
-                        Show Recommended Package
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -219,14 +185,27 @@ export default function AiChat() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
               placeholder="Type Your Message..."
-              className="flex-1 text-sm bg-transparent border-none py-3 text-[#0B132B] placeholder-gray-400 focus:outline-none focus:ring-0"
+              disabled={!isConnected}
+              className="flex-1 text-sm bg-transparent border-none py-3 text-[#0B132B] placeholder-gray-400 focus:outline-none focus:ring-0 disabled:opacity-50"
             />
-            <button
-              onClick={() => handleSend()}
-              className="w-10 h-10 flex items-center justify-center bg-[#B89C72] hover:bg-[#9a7e55] text-white rounded-full transition-colors duration-200 flex-shrink-0 cursor-pointer shadow-sm"
-            >
-              <Send className="w-4 h-4 transform rotate-0" />
-            </button>
+            {isTyping ? (
+              <button
+                onClick={abortReply}
+                title="Stop generating"
+                className="w-10 h-10 flex items-center justify-center bg-red-500 hover:bg-red-600 text-white rounded-full transition-colors duration-200 flex-shrink-0 cursor-pointer shadow-sm animate-pulse"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            ) : (
+              <button
+                onClick={() => handleSend()}
+                disabled={!isConnected || !input.trim()}
+                title="Send message"
+                className="w-10 h-10 flex items-center justify-center bg-[#B89C72] hover:bg-[#9a7e55] text-white rounded-full transition-colors duration-200 flex-shrink-0 cursor-pointer shadow-sm disabled:opacity-55 disabled:cursor-not-allowed"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>

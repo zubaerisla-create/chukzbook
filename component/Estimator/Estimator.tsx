@@ -66,6 +66,31 @@ const Estimator = () => {
     .reduce((acc, [k]) => acc + SERVICE_PRICES[k], 0);
   const totalCost = printingCost + serviceCost;
 
+  const handleTalkToSpecialist = () => {
+    const quoteMessage = `Hi, I just calculated a printing estimate. 
+Specs: 
+- Book Type: ${bookType}
+- Interior: ${interiorType}
+- Binding: ${bindingType}
+- Trim Size: ${trimSize}
+- Page Count: ${pageCount}
+- Quantity: ${quantity} copies
+- Paper Type: ${paperType}
+- Paper Weight: ${paperWeight}lb
+- Cover Finish: ${coverFinish}
+
+Total Estimated Cost: $${totalCost.toFixed(2)}
+
+I would like to talk to a specialist about this quote.`;
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("harmony_calculator_handoff", quoteMessage);
+      // Trigger the floating chat widget to open and send the quote
+      window.dispatchEvent(new CustomEvent("harmony_calculator_handoff_trigger"));
+      window.dispatchEvent(new CustomEvent("open_chat_widget"));
+    }
+  };
+
   return (
     <section
       id="estimator"
@@ -266,7 +291,12 @@ const Estimator = () => {
               <button className="w-full py-3.5 bg-[#B89C72] hover:bg-[#a08660] text-white text-sm font-bold rounded-xl transition-colors duration-300 cursor-pointer">
                 Get This Package
               </button>
-              <p className="text-center text-xs text-gray-400 mt-4">Talk to a Specialist</p>
+              <button 
+                onClick={handleTalkToSpecialist}
+                className="w-full text-center text-xs text-gray-400 hover:text-white mt-4 underline cursor-pointer bg-transparent border-0 transition-colors"
+              >
+                Talk to a Specialist
+              </button>
             </div>
           </div>
         </div>

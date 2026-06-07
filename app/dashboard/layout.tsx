@@ -1,8 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Image from 'next/image';
+import { usePathname, useRouter } from 'next/navigation';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '@/redux/store';
+import { logOut } from '@/redux/slices/authSlice';
+import { useLogoutMutation, useGetUnreadCountQuery, useGetMyPackageQuery, useGetProfileQuery } from '@/redux/api/authApi';
 import { 
   Home, 
   BookOpen, 
@@ -16,6 +21,13 @@ import {
   Menu,
   X 
 } from 'lucide-react';
+import jamesCerter from "@/assets/images/james_certer.png";
+
+const getProfilePicture = (pic: string | null | undefined) => {
+  if (!pic) return jamesCerter;
+  if (pic === "string" || pic.trim() === "") return jamesCerter;
+  return pic;
+};
 
 const sidebarItems = [
   { name: 'Overview', href: '/dashboard', icon: Home },
@@ -34,6 +46,63 @@ export default function DashboardLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const dispatch = useDispatch();
+
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const [logout] = useLogoutMutation();
+  const [isClient, setIsClient] = useState(false);
+
+  // Live queries for sidebar indicators
+  const { data: unreadData } = useGetUnreadCountQuery(undefined, { skip: !isAuthenticated });
+  const { data: myPackage } = useGetMyPackageQuery(undefined, { skip: !isAuthenticated });
+  const { data: profile } = useGetProfileQuery(undefined, { skip: !isAuthenticated });
+
+  const unreadCount = unreadData?.unread_count || 0;
+  const activePackageName = myPackage?.package_name || "Premium Package";
+  const activePackageStatus = myPackage?.status || "Active";
+  
+  const renewsOn = myPackage?.created_at
+    ? new Date(new Date(myPackage.created_at).setFullYear(new Date(myPackage.created_at).getFullYear() + 1)).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+    : "Dec 2, 2025";
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isClient, isAuthenticated, router]);
+
+  const handleLogout = async () => {
+    try {
+      const savedRefreshToken = typeof window !== "undefined" 
+        ? localStorage.getItem("harmony_auth_refresh_token") 
+        : null;
+      if (savedRefreshToken) {
+        await logout({ refresh: savedRefreshToken }).unwrap();
+      }
+    } catch (err) {
+      console.error("Logout API call failed:", err);
+    } finally {
+      dispatch(logOut());
+      router.push("/");
+    }
+  };
+
+  // Protect client side content and show smooth loader
+  if (!isClient || !isAuthenticated) {
+    return (
+      <div className="flex h-screen bg-[#FAF8F5] items-center justify-center font-sans">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#B89C72] mx-auto"></div>
+          <p className="text-xs font-bold uppercase tracking-wider text-[#B89C72]">Authorizing session...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-[#FAF8F5]">
@@ -85,7 +154,7 @@ export default function DashboardLayout({
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center px-4 py-3 mx-2 rounded-xl border transition-all duration-300 gap-3.5 text-sm font-semibold ${
+                className={`flex items-center px-4 py-3 mx-2 rounded-xl border transition-all duration-300 gap-3.5 text-sm font-semibold relative ${
                   isActive
                     ? 'bg-[#FAF5EE] border-[#B89C72] text-[#B89C72] shadow-xs'
                     : 'bg-transparent border-transparent text-gray-700 hover:bg-gray-50 hover:text-[#0B132B]'
@@ -93,7 +162,12 @@ export default function DashboardLayout({
                 onClick={() => setSidebarOpen(false)}
               >
                 <Icon size={18} className={isActive ? 'text-[#B89C72]' : 'text-gray-500'} />
-                <span>{item.name}</span>
+                <span className="flex-1">{item.name}</span>
+                {item.name === 'Notifications' && unreadCount > 0 && (
+                  <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    {unreadCount}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -107,18 +181,18 @@ export default function DashboardLayout({
               <Crown size={26} className="fill-[#F2A33A]/10" />
             </div>
 
-            <h4 className="font-serif text-sm font-bold text-[#0B132B] mb-1">
-              Premium Package
+            <h4 className="font-serif text-sm font-bold text-[#0B132B] mb-1 capitalize">
+              {activePackageName}
             </h4>
 
             {/* Active Badge */}
-            <span className="inline-flex items-center bg-[#E1F7E3] text-[#2CA943] text-[10px] font-bold px-3 py-1 rounded-full mb-3">
-              Active
+            <span className="inline-flex items-center bg-[#E1F7E3] text-[#2CA943] text-[10px] font-bold px-3 py-1 rounded-full mb-3 uppercase">
+              {activePackageStatus}
             </span>
 
             {/* Renews On text */}
             <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider mb-4">
-              Renews On Dec 2. 2025
+              Renews On {renewsOn}
             </p>
 
             {/* View Button */}
@@ -131,15 +205,38 @@ export default function DashboardLayout({
           </div>
         </div>
 
+        {/* User Profile Widget */}
+        {profile && (
+          <div className="px-4 py-3 mx-4 mb-2 bg-[#FAF8F5] border border-[#EBE5D6]/60 rounded-xl flex items-center gap-3 shadow-xs">
+            <div className="relative w-9 h-9 rounded-full overflow-hidden border border-[#EBE5D6] bg-[#FAF5EE] flex-shrink-0">
+              <Image
+                src={getProfilePicture(profile.profile_picture)}
+                alt="User Avatar"
+                layout="fill"
+                objectFit="cover"
+                unoptimized
+              />
+            </div>
+            <div className="overflow-hidden flex-1">
+              <p className="text-xs font-bold text-[#0B132B] truncate">
+                {profile.first_name ? `${profile.first_name} ${profile.last_name}` : "Author"}
+              </p>
+              <p className="text-[10px] text-gray-400 truncate font-medium">
+                {profile.email}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Log Out Action */}
         <div className="px-4 pb-6">
-          <Link
-            href="/login"
-            className="w-full flex items-center justify-center py-3.5 border border-red-100 hover:border-red-300 text-red-500 hover:bg-red-50/20 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-300 shadow-xs"
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center py-3.5 border border-red-100 hover:border-red-300 text-red-500 hover:bg-red-50/20 text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-300 shadow-xs cursor-pointer bg-transparent"
           >
             <LogOut size={16} className="mr-2" />
             Log Out
-          </Link>
+          </button>
         </div>
 
       </div>
